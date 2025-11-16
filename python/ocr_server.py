@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 OCR Server - Stdin/Stdout JSON communication with Electron
-Phase 2: PDF support, advanced layout detection, smart text refinement
+Phase 4: Full-text search, document management, export
 """
 import json
 import sys
@@ -15,6 +15,9 @@ from pdf_processor import PDFProcessor
 from document_stitcher import DocumentStitcher
 from table_detector import TableDetector
 from reading_order import ReadingOrderOptimizer
+from search_engine import SearchEngine
+from document_manager import DocumentManager
+from export_manager import ExportManager
 
 
 class OCRServer:
@@ -28,6 +31,11 @@ class OCRServer:
         self.table_detector = TableDetector()
         self.reading_order_optimizer = ReadingOrderOptimizer()
 
+        # Phase 4: Search and management
+        self.search_engine = SearchEngine()
+        self.document_manager = DocumentManager()
+        self.export_manager = ExportManager()
+
     def process_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process incoming request and return result"""
         try:
@@ -37,6 +45,16 @@ class OCRServer:
                 return self.handle_ocr(request)
             elif command == 'ocr_pdf':
                 return self.handle_ocr_pdf(request)
+            elif command == 'search':
+                return self.handle_search(request)
+            elif command == 'save_document':
+                return self.handle_save_document(request)
+            elif command == 'export':
+                return self.handle_export(request)
+            elif command == 'list_documents':
+                return self.handle_list_documents(request)
+            elif command == 'get_tags':
+                return self.handle_get_tags(request)
             elif command == 'ping':
                 return {'status': 'ok', 'message': 'pong'}
             else:
@@ -171,3 +189,90 @@ class OCRServer:
 if __name__ == '__main__':
     server = OCRServer()
     server.run()
+
+    # Phase 4 handlers
+    def handle_search(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle search request"""
+        query = request.get('query', '').strip()
+        limit = request.get('limit', 20)
+
+        if not query:
+            return {'status': 'error', 'message': 'Query is required'}
+
+        try:
+            results = self.search_engine.search(query, limit=limit)
+            return {'status': 'ok', 'results': results}
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}
+
+    def handle_save_document(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle save document request"""
+        try:
+            title = request.get('title', 'Untitled')
+            file_path = request.get('file_path', '')
+            content = request.get('content', '')
+            metadata = request.get('metadata', {})
+            tags = request.get('tags', [])
+
+            doc_id = self.document_manager.add_document(
+                title=title, file_path=file_path, content=content,
+                metadata=metadata, tags=tags
+            )
+
+            self.search_engine.add_document(
+                doc_id=doc_id, title=title, content=content,
+                path=file_path, tags=tags, metadata=metadata
+            )
+
+            return {'status': 'ok', 'doc_id': doc_id}
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}
+
+    def handle_export(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle export request"""
+        try:
+            format = request.get('format', 'markdown')
+            content = request.get('content', '')
+            metadata = request.get('metadata', {})
+            toc = request.get('toc', [])
+            sections = request.get('sections', [])
+            output_path = request.get('output_path')
+
+            if format == 'markdown':
+                result = self.export_manager.export_to_markdown(
+                    content, metadata, toc, sections, output_path
+                )
+            elif format == 'obsidian':
+                result = self.export_manager.export_to_obsidian(
+                    content, metadata, toc,
+                    request.get('vault_path'), request.get('filename', 'export.md')
+                )
+            elif format == 'json':
+                result = self.export_manager.export_to_json(
+                    content, metadata, toc, sections,
+                    request.get('paragraphs', []), output_path
+                )
+            else:
+                return {'status': 'error', 'message': f'Unknown format: {format}'}
+
+            return {'status': 'ok', 'result': result if isinstance(result, dict) else {'content': result}}
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}
+
+    def handle_list_documents(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle list documents request"""
+        try:
+            documents = self.document_manager.list_documents(
+                limit=request.get('limit', 100), offset=request.get('offset', 0)
+            )
+            return {'status': 'ok', 'documents': documents,
+                    'statistics': self.document_manager.get_statistics()}
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}
+
+    def handle_get_tags(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle get tags request"""
+        try:
+            return {'status': 'ok', 'tags': self.document_manager.get_all_tags()}
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}

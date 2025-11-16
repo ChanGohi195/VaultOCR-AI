@@ -21,6 +21,8 @@
 - **OCR**: PaddleOCR (Apache 2.0)
 - **画像処理**: OpenCV (Apache 2.0)
 - **数値計算**: NumPy + SciPy (BSD)
+- **検索エンジン**: Whoosh (BSD) - 純粋Python全文検索
+- **データベース**: SQLite (内蔵) - ドキュメント管理
 
 ## 🚀 開発ロードマップ
 
@@ -51,12 +53,19 @@
 - [x] セクション構造解析
 - [x] DocumentInfo UI実装
 
-### Phase 4: エコシステム（次）
-- [ ] 全文検索（MeiliSearch/Tantivy）
-- [ ] タグ管理
-- [ ] Obsidian/Notionエクスポート
+### Phase 4: エコシステム ✅ (完了)
+- [x] 全文検索（Whoosh - 純粋Python）
+- [x] ドキュメント管理（SQLite）
+- [x] タグ管理システム
+- [x] Markdown/Obsidian/JSON/Notionエクスポート
+- [x] 検索インデックス自動更新
+- [x] ドキュメント統計情報
+
+### Phase 5: 高度化（次）
 - [ ] ベクトル検索（sentence-transformers）
 - [ ] プラグインシステム
+- [ ] バッチ処理
+- [ ] カスタムテンプレート
 
 ## 🛠️ セットアップ
 
@@ -99,11 +108,15 @@ VaultOCR-AI/
 │   │   ├── DocumentInfo.tsx  # TOC/Sections
 │   │   └── ...
 ├── python/           # Python OCR Backend
-│   ├── layout_analyzer.py    # レイアウト検出
-│   ├── text_refiner.py       # 段落化
-│   ├── document_stitcher.py  # ページ統合
-│   ├── table_detector.py     # テーブル検出
-│   └── reading_order.py      # 読み順最適化
+│   ├── ocr_server.py          # メインサーバー
+│   ├── layout_analyzer.py     # レイアウト検出
+│   ├── text_refiner.py        # 段落化
+│   ├── document_stitcher.py   # ページ統合
+│   ├── table_detector.py      # テーブル検出
+│   ├── reading_order.py       # 読み順最適化
+│   ├── search_engine.py       # 全文検索（Whoosh）
+│   ├── document_manager.py    # ドキュメント管理
+│   └── export_manager.py      # エクスポート機能
 └── dist/             # ビルド出力
 ```
 
@@ -117,7 +130,36 @@ Issue・PRを歓迎します！
 
 ---
 
-**開発状況**: Phase 3 完了 🎉🚀
+**開発状況**: Phase 4 完了 🎉🚀
+
+## 🆕 Phase 4 新機能
+
+### 全文検索エンジン（Whoosh）
+- 純粋Python実装、完全無料
+- マルチフィールド検索（タイトル・内容・タグ）
+- ハイライト機能付き検索結果
+- 自動インデックス更新
+
+### ドキュメント管理（SQLite）
+- ドキュメントメタデータ保存
+- タグシステム（多対多リレーション）
+- 統計情報自動集計
+- 完全オフライン動作
+
+### エクスポート機能
+- **Markdown**: 標準フォーマット
+- **Obsidian**: フロントマター + Wiki Links対応
+- **JSON**: 構造化データ保存
+- **Notion**: Notionフォーマット互換
+
+### OCR Server API拡張
+- `search`: 全文検索クエリ実行
+- `save_document`: ドキュメント保存＋自動インデックス
+- `export`: 各種フォーマットエクスポート
+- `list_documents`: ドキュメント一覧取得
+- `get_tags`: タグ一覧取得
+
+---
 
 ## 🆕 Phase 3 新機能
 

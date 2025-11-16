@@ -14,3 +14,6 @@ scipy>=1.11.0
 
 # Text Processing (Phase 2)
 pysbd>=0.3.4
+
+# Full-text Search (Phase 4)
+whoosh>=2.7.4
