@@ -26,6 +26,11 @@ function App() {
     await window.electronAPI.writeFile(currentFile, content)
   }
 
+  const handleOCRComplete = (text: string) => {
+    setContent(text)
+    setCurrentFile(null) // New unsaved content
+  }
+
   return (
     <div className="flex flex-col h-screen bg-obsidian-bg text-obsidian-text">
       <Toolbar
@@ -33,6 +38,7 @@ function App() {
         onTogglePreview={() => setShowPreview(!showPreview)}
         showPreview={showPreview}
         currentFile={currentFile}
+        onOCRComplete={handleOCRComplete}
       />
 
       <div className="flex flex-1 overflow-hidden">

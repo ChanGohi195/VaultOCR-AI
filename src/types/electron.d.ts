@@ -6,9 +6,22 @@ export interface ElectronAPI {
     files?: Array<{ name: string; isDirectory: boolean; path: string }>
     error?: string
   }>
-  runOCR: (imagePath: string) => Promise<{
+  selectFile: (options?: any) => Promise<{
     success: boolean
-    result?: { text: string; chunks: any[] }
+    filePath?: string
+    canceled?: boolean
+  }>
+  runOCR: (filePath: string) => Promise<{
+    success: boolean
+    result?: {
+      text: string
+      chunks: any[]
+      paragraphs?: any[]
+      metadata?: {
+        page_count: number
+        layout_type: string
+      }
+    }
     error?: string
   }>
 }

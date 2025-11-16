@@ -7,5 +7,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   writeFile: (filePath: string, content: string) =>
     ipcRenderer.invoke('write-file', filePath, content),
   listFiles: (dirPath: string) => ipcRenderer.invoke('list-files', dirPath),
-  runOCR: (imagePath: string) => ipcRenderer.invoke('run-ocr', imagePath),
+  selectFile: (options?: any) => ipcRenderer.invoke('select-file', options),
+  runOCR: (filePath: string) => ipcRenderer.invoke('run-ocr', filePath),
 })

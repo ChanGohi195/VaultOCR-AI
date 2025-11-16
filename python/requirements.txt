@@ -10,7 +10,7 @@ opencv-python>=4.8.0
 # Utilities
 numpy>=1.24.0
 pyyaml>=6.0
+scipy>=1.11.0
 
-# Text Processing (for Phase 2)
-# spacy>=3.7.0
-# pysbd>=0.3.4
+# Text Processing (Phase 2)
+pysbd>=0.3.4
