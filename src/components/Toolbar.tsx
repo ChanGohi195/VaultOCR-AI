@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Save, Eye, EyeOff, FileText, Camera, Loader2, Download, FolderOpen, FileStack } from 'lucide-react'
+import { Save, Eye, EyeOff, FileText, Camera, Loader2, Download, FolderOpen, FileStack, Layers } from 'lucide-react'
 
 interface ToolbarProps {
   onSave: () => void
@@ -8,6 +8,7 @@ interface ToolbarProps {
   currentFile: string | null
   onOCRComplete: (text: string, metadata?: any, toc?: any[], sections?: any[]) => void
   onExport?: () => void
+  onBatch?: () => void
   onToggleSidebarMode?: () => void
   sidebarMode?: 'files' | 'documents'
 }
@@ -19,6 +20,7 @@ export default function Toolbar({
   currentFile,
   onOCRComplete,
   onExport,
+  onBatch,
   onToggleSidebarMode,
   sidebarMode
 }: ToolbarProps) {
@@ -140,6 +142,17 @@ export default function Toolbar({
             >
               <Download className="w-4 h-4" />
               <span>Export</span>
+            </button>
+          )}
+
+          {onBatch && (
+            <button
+              onClick={onBatch}
+              className="px-3 py-1.5 text-sm rounded hover:bg-obsidian-hover flex items-center space-x-1"
+              title="Batch OCR Processing"
+            >
+              <Layers className="w-4 h-4" />
+              <span>Batch</span>
             </button>
           )}
 

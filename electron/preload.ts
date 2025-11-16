@@ -19,4 +19,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   listDocuments: (limit?: number, offset?: number) =>
     ipcRenderer.invoke('list-documents', limit, offset),
   getTags: () => ipcRenderer.invoke('get-tags'),
+  getDocument: (docId: string) => ipcRenderer.invoke('get-document', docId),
+  // Phase 5 APIs
+  batchOCR: (filePaths: string[], autoSave: boolean, tags: string[]) =>
+    ipcRenderer.invoke('batch-ocr', filePaths, autoSave, tags),
 })

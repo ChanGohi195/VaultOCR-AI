@@ -18,6 +18,7 @@ from reading_order import ReadingOrderOptimizer
 from search_engine import SearchEngine
 from document_manager import DocumentManager
 from export_manager import ExportManager
+from batch_processor import BatchProcessor
 
 
 class OCRServer:
@@ -35,6 +36,13 @@ class OCRServer:
         self.search_engine = SearchEngine()
         self.document_manager = DocumentManager()
         self.export_manager = ExportManager()
+
+        # Phase 5: Batch processing
+        self.batch_processor = BatchProcessor(
+            ocr_handler=self._ocr_single_file,
+            document_manager=self.document_manager,
+            search_engine=self.search_engine
+        )
 
     def process_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process incoming request and return result"""
@@ -55,6 +63,10 @@ class OCRServer:
                 return self.handle_list_documents(request)
             elif command == 'get_tags':
                 return self.handle_get_tags(request)
+            elif command == 'get_document':
+                return self.handle_get_document(request)
+            elif command == 'batch_ocr':
+                return self.handle_batch_ocr(request)
             elif command == 'ping':
                 return {'status': 'ok', 'message': 'pong'}
             else:
@@ -276,3 +288,67 @@ if __name__ == '__main__':
             return {'status': 'ok', 'tags': self.document_manager.get_all_tags()}
         except Exception as e:
             return {'status': 'error', 'message': str(e)}
+
+    def handle_get_document(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle get document request"""
+        try:
+            doc_id = request.get('doc_id')
+            if not doc_id:
+                return {'status': 'error', 'message': 'doc_id is required'}
+
+            document = self.document_manager.get_document(doc_id)
+            if not document:
+                return {'status': 'error', 'message': f'Document {doc_id} not found'}
+
+            return {'status': 'ok', 'document': document}
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}
+
+    def handle_batch_ocr(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle batch OCR request"""
+        try:
+            file_paths = request.get('file_paths', [])
+            auto_save = request.get('auto_save', True)
+            tags = request.get('tags', [])
+
+            if not file_paths:
+                return {'status': 'error', 'message': 'file_paths is required'}
+
+            # バッチ処理実行
+            results = self.batch_processor.process_batch(
+                file_paths=file_paths,
+                auto_save=auto_save,
+                tags=tags
+            )
+
+            return {
+                'status': 'ok',
+                'result': results
+            }
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}
+
+    def _ocr_single_file(self, file_path: str) -> Dict[str, Any]:
+        """
+        単一ファイルのOCR処理（バッチ処理用内部メソッド）
+
+        Args:
+            file_path: 処理するファイルパス
+
+        Returns:
+            OCR結果
+        """
+        # PDFまたは画像を判定
+        if file_path.lower().endswith('.pdf'):
+            # PDF処理
+            request = {'pdf_path': file_path}
+            response = self.handle_ocr_pdf(request)
+        else:
+            # 画像処理
+            request = {'image_path': file_path}
+            response = self.handle_ocr(request)
+
+        if response.get('status') == 'ok':
+            return response.get('result', {})
+        else:
+            raise Exception(response.get('message', 'OCR failed'))

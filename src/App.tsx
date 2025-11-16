@@ -7,6 +7,7 @@ import DocumentInfo from './components/DocumentInfo'
 import SearchBar from './components/SearchBar'
 import DocumentList from './components/DocumentList'
 import ExportDialog from './components/ExportDialog'
+import BatchProcessDialog from './components/BatchProcessDialog'
 
 type SidebarMode = 'files' | 'documents'
 
@@ -19,6 +20,7 @@ function App() {
   const [documentSections, setDocumentSections] = useState<any[]>([])
   const [sidebarMode, setSidebarMode] = useState<SidebarMode>('files')
   const [showExportDialog, setShowExportDialog] = useState(false)
+  const [showBatchDialog, setShowBatchDialog] = useState(false)
   const [currentDocId, setCurrentDocId] = useState<string | null>(null)
 
   const handleFileSelect = async (filePath: string) => {
@@ -63,9 +65,7 @@ function App() {
   }
 
   const handleDocumentSelect = async (docId: string) => {
-    setCurrentDocId(docId)
-    // Load document content - would need to implement document retrieval
-    console.log('Selected document:', docId)
+    await handleLoadDocument(docId)
   }
 
   const handleLoadDocuments = async (limit?: number, offset?: number) => {
@@ -100,6 +100,26 @@ function App() {
     }
   }
 
+  const handleBatchOCR = async (filePaths: string[], autoSave: boolean, tags: string[]) => {
+    const result = await window.electronAPI.batchOCR(filePaths, autoSave, tags)
+    if (result.success && result.result) {
+      return result.result
+    } else {
+      throw new Error(result.error || 'Batch OCR failed')
+    }
+  }
+
+  const handleLoadDocument = async (docId: string) => {
+    const result = await window.electronAPI.getDocument(docId)
+    if (result.success && result.result) {
+      const doc = result.result.document
+      setContent(doc.content)
+      setDocumentMetadata(doc.metadata || { title: doc.title, page_count: doc.page_count })
+      setCurrentDocId(doc.id)
+      setCurrentFile(null)
+    }
+  }
+
   return (
     <div className="flex flex-col h-screen bg-obsidian-bg text-obsidian-text">
       {/* Search Bar */}
@@ -117,6 +137,7 @@ function App() {
         currentFile={currentFile}
         onOCRComplete={handleOCRComplete}
         onExport={() => setShowExportDialog(true)}
+        onBatch={() => setShowBatchDialog(true)}
         onToggleSidebarMode={() => setSidebarMode(mode => mode === 'files' ? 'documents' : 'files')}
         sidebarMode={sidebarMode}
       />
@@ -160,6 +181,13 @@ function App() {
         content={content}
         metadata={documentMetadata}
         toc={documentToc}
+      />
+
+      {/* Batch Process Dialog */}
+      <BatchProcessDialog
+        isOpen={showBatchDialog}
+        onClose={() => setShowBatchDialog(false)}
+        onBatchOCR={handleBatchOCR}
       />
     </div>
   )

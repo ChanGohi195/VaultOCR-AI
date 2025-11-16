@@ -111,7 +111,11 @@ ipcMain.handle('select-file', async (event, options?: any) => {
     return { success: false, canceled: true }
   }
 
-  return { success: true, filePath: result.filePaths[0] }
+  return {
+    success: true,
+    filePath: result.filePaths[0],
+    filePaths: result.filePaths
+  }
 })
 
 ipcMain.handle('select-directory', async (event) => {
@@ -190,6 +194,32 @@ ipcMain.handle('get-tags', async (event) => {
   try {
     const result = await runPythonCommand({
       command: 'get_tags'
+    })
+    return { success: true, result }
+  } catch (error) {
+    return { success: false, error: (error as Error).message }
+  }
+})
+
+ipcMain.handle('get-document', async (event, docId: string) => {
+  try {
+    const result = await runPythonCommand({
+      command: 'get_document',
+      doc_id: docId
+    })
+    return { success: true, result }
+  } catch (error) {
+    return { success: false, error: (error as Error).message }
+  }
+})
+
+ipcMain.handle('batch-ocr', async (event, filePaths: string[], autoSave: boolean, tags: string[]) => {
+  try {
+    const result = await runPythonCommand({
+      command: 'batch_ocr',
+      file_paths: filePaths,
+      auto_save: autoSave,
+      tags: tags || []
     })
     return { success: true, result }
   } catch (error) {

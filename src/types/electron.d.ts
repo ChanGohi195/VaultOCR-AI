@@ -9,6 +9,7 @@ export interface ElectronAPI {
   selectFile: (options?: any) => Promise<{
     success: boolean
     filePath?: string
+    filePaths?: string[]
     canceled?: boolean
   }>
   selectDirectory: () => Promise<string | null>
@@ -82,6 +83,39 @@ export interface ElectronAPI {
   getTags: () => Promise<{
     success: boolean
     result?: { tags: string[] }
+    error?: string
+  }>
+  getDocument: (docId: string) => Promise<{
+    success: boolean
+    result?: {
+      document: {
+        id: string
+        title: string
+        content: string
+        file_path?: string
+        created_at: string
+        page_count?: number
+        tags: string[]
+        metadata?: any
+      }
+    }
+    error?: string
+  }>
+  // Phase 5 APIs
+  batchOCR: (filePaths: string[], autoSave: boolean, tags: string[]) => Promise<{
+    success: boolean
+    result?: {
+      total: number
+      success: number
+      failed: number
+      files: Array<{
+        path: string
+        filename: string
+        status: string
+        error?: string
+        doc_id?: string
+      }>
+    }
     error?: string
   }>
 }
