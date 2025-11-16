@@ -12,6 +12,9 @@ import traceback
 from layout_analyzer import LayoutAnalyzer
 from text_refiner import TextRefiner
 from pdf_processor import PDFProcessor
+from document_stitcher import DocumentStitcher
+from table_detector import TableDetector
+from reading_order import ReadingOrderOptimizer
 
 
 class OCRServer:
@@ -21,6 +24,9 @@ class OCRServer:
         self.layout_analyzer = LayoutAnalyzer()
         self.text_refiner = TextRefiner()
         self.pdf_processor = PDFProcessor()
+        self.document_stitcher = DocumentStitcher()
+        self.table_detector = TableDetector()
+        self.reading_order_optimizer = ReadingOrderOptimizer()
 
     def process_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process incoming request and return result"""
@@ -53,6 +59,16 @@ class OCRServer:
         # Phase 2: Advanced OCR with layout detection
         layout_result = self.layout_analyzer.analyze(image_path)
 
+        # Phase 3: Optimize reading order
+        layout_result['chunks'] = self.reading_order_optimizer.optimize_reading_order(
+            layout_result['chunks'],
+            layout_result.get('layout_type', 'one_column')
+        )
+
+        # Phase 3: Detect tables
+        tables = self.table_detector.detect_tables(image_path, layout_result['chunks'])
+        layout_result['tables'] = tables
+
         # Phase 2: Smart text refinement
         text_result = self.text_refiner.refine(layout_result)
 
@@ -62,9 +78,11 @@ class OCRServer:
                 'text': text_result['markdown'],
                 'chunks': layout_result['chunks'],
                 'paragraphs': text_result['paragraphs'],
+                'tables': tables,
                 'metadata': {
                     'page_count': 1,
-                    'layout_type': layout_result.get('layout_type', 'unknown')
+                    'layout_type': layout_result.get('layout_type', 'unknown'),
+                    'table_count': len(tables)
                 }
             }
         }
@@ -87,30 +105,36 @@ class OCRServer:
                 # All pages
                 pages = self.pdf_processor.process_pdf(pdf_path)
 
-                results = []
+                # Process each page
+                page_results = []
                 for page_info in pages:
                     page_result = self.handle_ocr({'image_path': page_info['image_path']})
 
                     if page_result['status'] == 'ok':
-                        results.append({
+                        page_results.append({
                             'page_number': page_info['page_number'],
                             'text': page_result['result']['text'],
-                            'layout_type': page_result['result']['metadata']['layout_type']
+                            'paragraphs': page_result['result']['paragraphs'],
+                            'chunks': page_result['result']['chunks'],
+                            'layout_type': page_result['result']['metadata']['layout_type'],
+                            'tables': page_result['result'].get('tables', [])
                         })
 
-                # Combine all pages
-                combined_text = '\n\n---\n\n'.join([
-                    f"# Page {r['page_number']}\n\n{r['text']}"
-                    for r in results
-                ])
+                # Phase 3: Stitch pages together
+                stitched = self.document_stitcher.stitch_pages(page_results)
 
                 return {
                     'status': 'ok',
                     'result': {
-                        'text': combined_text,
-                        'pages': results,
+                        'text': stitched['markdown'],
+                        'pages': page_results,
+                        'paragraphs': stitched['paragraphs'],
+                        'sections': stitched['sections'],
+                        'toc': stitched['toc'],
                         'metadata': {
-                            'page_count': len(results)
+                            'page_count': len(page_results),
+                            'section_count': len(stitched['sections']),
+                            'total_tables': sum(len(p.get('tables', [])) for p in page_results)
                         }
                     }
                 }

@@ -1,0 +1,121 @@
+import { BookOpen, Hash, Table, FileText } from 'lucide-react'
+
+interface DocumentInfoProps {
+  metadata?: {
+    page_count?: number
+    layout_type?: string
+    section_count?: number
+    total_tables?: number
+    table_count?: number
+  }
+  toc?: Array<{
+    title: string
+    level: number
+    page: number
+  }>
+  sections?: Array<{
+    title: string
+    level: number
+    paragraphs: any[]
+  }>
+}
+
+export default function DocumentInfo({ metadata, toc, sections }: DocumentInfoProps) {
+  if (!metadata && !toc && !sections) {
+    return null
+  }
+
+  return (
+    <div className="w-64 bg-obsidian-sidebar border-l border-obsidian-border overflow-y-auto">
+      <div className="p-4 space-y-6">
+        {/* Metadata */}
+        {metadata && (
+          <div>
+            <h3 className="text-xs font-semibold mb-3 text-obsidian-text/80 flex items-center space-x-2">
+              <FileText className="w-3 h-3" />
+              <span>DOCUMENT INFO</span>
+            </h3>
+            <div className="space-y-2 text-xs text-obsidian-text/60">
+              {metadata.page_count && (
+                <div className="flex justify-between">
+                  <span>Pages:</span>
+                  <span className="font-medium text-obsidian-text">{metadata.page_count}</span>
+                </div>
+              )}
+              {metadata.section_count !== undefined && (
+                <div className="flex justify-between">
+                  <span>Sections:</span>
+                  <span className="font-medium text-obsidian-text">{metadata.section_count}</span>
+                </div>
+              )}
+              {metadata.layout_type && (
+                <div className="flex justify-between">
+                  <span>Layout:</span>
+                  <span className="font-medium text-obsidian-text capitalize">
+                    {metadata.layout_type.replace('_', ' ')}
+                  </span>
+                </div>
+              )}
+              {(metadata.total_tables || metadata.table_count) && (
+                <div className="flex justify-between">
+                  <span>Tables:</span>
+                  <span className="font-medium text-obsidian-text">
+                    {metadata.total_tables || metadata.table_count}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Table of Contents */}
+        {toc && toc.length > 0 && (
+          <div>
+            <h3 className="text-xs font-semibold mb-3 text-obsidian-text/80 flex items-center space-x-2">
+              <BookOpen className="w-3 h-3" />
+              <span>TABLE OF CONTENTS</span>
+            </h3>
+            <div className="space-y-1">
+              {toc.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="text-xs text-obsidian-text/70 hover:text-obsidian-accent cursor-pointer py-1 px-2 rounded hover:bg-obsidian-hover"
+                  style={{ paddingLeft: `${(item.level - 1) * 12 + 8}px` }}
+                >
+                  <div className="flex items-start space-x-2">
+                    <Hash className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                    <span className="flex-1 truncate">{item.title}</span>
+                    <span className="text-obsidian-text/40 text-[10px]">p{item.page}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Sections Summary */}
+        {sections && sections.length > 0 && !toc && (
+          <div>
+            <h3 className="text-xs font-semibold mb-3 text-obsidian-text/80 flex items-center space-x-2">
+              <Hash className="w-3 h-3" />
+              <span>SECTIONS</span>
+            </h3>
+            <div className="space-y-2">
+              {sections.map((section, idx) => (
+                <div
+                  key={idx}
+                  className="text-xs text-obsidian-text/70 hover:text-obsidian-accent cursor-pointer py-1.5 px-2 rounded hover:bg-obsidian-hover"
+                >
+                  <div className="font-medium truncate">{section.title}</div>
+                  <div className="text-[10px] text-obsidian-text/40 mt-0.5">
+                    {section.paragraphs?.length || 0} paragraphs
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

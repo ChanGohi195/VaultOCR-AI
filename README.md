@@ -8,16 +8,19 @@
 
 - **レイアウト認識OCR**: 多段組、サイドバー、脚注などを正しく認識
 - **段落再構成**: 行テキストを自然な段落に変換
+- **テーブル検出**: OpenCVによる表の自動検出・構造化
 - **Obsidian風UI**: 使い慣れたMarkdownエディタ体験
-- **完全無料**: PaddleOCR使用、API課金なし
-- **ローカル完結**: プライバシー保護
+- **完全無料**: PaddleOCR使用、API課金なし、100%ローカル実行
+- **プライバシー保護**: インターネット不要、完全オフライン動作
 
-## 📦 技術スタック
+## 📦 技術スタック（全て無料OSS）
 
 - **Frontend**: React + TypeScript + Tailwind CSS
-- **Desktop**: Electron
-- **Editor**: Monaco Editor (VS Code engine)
-- **OCR**: PaddleOCR (Python)
+- **Desktop**: Electron (MIT)
+- **Editor**: Monaco Editor (MIT)
+- **OCR**: PaddleOCR (Apache 2.0)
+- **画像処理**: OpenCV (Apache 2.0)
+- **数値計算**: NumPy + SciPy (BSD)
 
 ## 🚀 開発ロードマップ
 
@@ -28,7 +31,7 @@
 - [x] ファイル管理機能
 - [x] Monaco Editorマークダウン編集
 
-### Phase 2: OCR精度向上 ✅ (完了)
+### Phase 2: OCR精度向上 ✅
 - [x] PaddleOCR統合
 - [x] 多段組レイアウト検出（1/2/3カラム）
 - [x] スマート段落化（文途中改行の結合）
@@ -38,17 +41,21 @@
 - [x] PDF/画像アップロード
 - [x] OCR結果エディタ表示
 
-### Phase 3: 高度機能（次）
-- [ ] ページ跨ぎ段落連結
-- [ ] テーブル検出・構造化
-- [ ] 読み順最適化アルゴリズム
-- [ ] 複数ページPDF一括処理
+### Phase 3: 高度機能 ✅ (完了)
+- [x] ページ跨ぎ段落連結
+- [x] テーブル検出・構造化（OpenCV）
+- [x] 読み順最適化アルゴリズム（グラフベース）
+- [x] 見出し・章節検出
+- [x] Document Stitcher（複数ページ統合）
+- [x] 目次（TOC）自動生成
+- [x] セクション構造解析
+- [x] DocumentInfo UI実装
 
-### Phase 4: エコシステム
+### Phase 4: エコシステム（次）
 - [ ] 全文検索（MeiliSearch/Tantivy）
 - [ ] タグ管理
 - [ ] Obsidian/Notionエクスポート
-- [ ] ベクトル検索（オプション）
+- [ ] ベクトル検索（sentence-transformers）
 - [ ] プラグインシステム
 
 ## 🛠️ セットアップ
@@ -88,7 +95,15 @@ pnpm electron:build
 VaultOCR-AI/
 ├── electron/          # Electron Main Process
 ├── src/              # React Frontend
+│   ├── components/   # UI Components
+│   │   ├── DocumentInfo.tsx  # TOC/Sections
+│   │   └── ...
 ├── python/           # Python OCR Backend
+│   ├── layout_analyzer.py    # レイアウト検出
+│   ├── text_refiner.py       # 段落化
+│   ├── document_stitcher.py  # ページ統合
+│   ├── table_detector.py     # テーブル検出
+│   └── reading_order.py      # 読み順最適化
 └── dist/             # ビルド出力
 ```
 
@@ -102,9 +117,45 @@ Issue・PRを歓迎します！
 
 ---
 
-**開発状況**: Phase 2 完了 🎉
+**開発状況**: Phase 3 完了 🎉🚀
 
-## 🆕 Phase 2 新機能
+## 🆕 Phase 3 新機能
+
+### ページ跨ぎ段落連結
+- 文法的完結性チェック
+- 句読点・改行パターン解析
+- 英語・日本語対応の統合ロジック
+
+### テーブル検出・構造化（OpenCV）
+- Hough変換による罫線検出
+- セル領域の自動分割
+- Markdownテーブル生成
+- 完全無料（API不要）
+
+### 読み順最適化
+- グラフベースアルゴリズム（トポロジカルソート）
+- 多段組対応
+- ヘッダー/フッター優先度制御
+
+### 見出し・章節検出
+- 番号付き見出し（1.2.3）
+- 全大文字見出し
+- 日本語章節（第1章）
+- 階層構造の自動解析
+
+### Document Stitcher
+- 複数ページの統合
+- セクション構造構築
+- 目次（TOC）自動生成
+
+### DocumentInfo UI
+- リアルタイムTOC表示
+- セクション一覧
+- メタデータ表示（ページ数・テーブル数）
+
+---
+
+## Phase 2 新機能
 
 ### 多段組レイアウト検出
 - 1カラム / 2カラム / 3カラム 自動判定

@@ -3,11 +3,15 @@ import Sidebar from './components/Sidebar'
 import Editor from './components/Editor'
 import Preview from './components/Preview'
 import Toolbar from './components/Toolbar'
+import DocumentInfo from './components/DocumentInfo'
 
 function App() {
   const [currentFile, setCurrentFile] = useState<string | null>(null)
   const [content, setContent] = useState<string>('# Welcome to VaultOCR-AI\n\nStart by opening a file or running OCR on a PDF/image.')
   const [showPreview, setShowPreview] = useState(true)
+  const [documentMetadata, setDocumentMetadata] = useState<any>(null)
+  const [documentToc, setDocumentToc] = useState<any[]>([])
+  const [documentSections, setDocumentSections] = useState<any[]>([])
 
   const handleFileSelect = async (filePath: string) => {
     setCurrentFile(filePath)
@@ -26,9 +30,12 @@ function App() {
     await window.electronAPI.writeFile(currentFile, content)
   }
 
-  const handleOCRComplete = (text: string) => {
+  const handleOCRComplete = (text: string, metadata?: any, toc?: any[], sections?: any[]) => {
     setContent(text)
     setCurrentFile(null) // New unsaved content
+    setDocumentMetadata(metadata || null)
+    setDocumentToc(toc || [])
+    setDocumentSections(sections || [])
   }
 
   return (
@@ -55,6 +62,12 @@ function App() {
             <Preview content={content} className="w-1/2" />
           )}
         </div>
+
+        <DocumentInfo
+          metadata={documentMetadata}
+          toc={documentToc}
+          sections={documentSections}
+        />
       </div>
     </div>
   )

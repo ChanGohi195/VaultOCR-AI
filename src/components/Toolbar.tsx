@@ -6,7 +6,7 @@ interface ToolbarProps {
   onTogglePreview: () => void
   showPreview: boolean
   currentFile: string | null
-  onOCRComplete: (text: string) => void
+  onOCRComplete: (text: string, metadata?: any, toc?: any[], sections?: any[]) => void
 }
 
 export default function Toolbar({ onSave, onTogglePreview, showPreview, currentFile, onOCRComplete }: ToolbarProps) {
@@ -43,14 +43,25 @@ export default function Toolbar({ onSave, onTogglePreview, showPreview, currentF
       }
 
       // Update editor with result
-      onOCRComplete(ocrResult.result!.text)
+      const result = ocrResult.result!
+      onOCRComplete(
+        result.text,
+        result.metadata,
+        result.toc,
+        result.sections
+      )
 
       // Show success message
-      const metadata = ocrResult.result!.metadata
-      setStatus(
-        `Success! Layout: ${metadata?.layout_type}, Pages: ${metadata?.page_count}`
-      )
-      setTimeout(() => setStatus(''), 3000)
+      const metadata = result.metadata
+      const details = [
+        `Pages: ${metadata?.page_count || 1}`,
+        `Layout: ${metadata?.layout_type || 'unknown'}`,
+        metadata?.section_count ? `Sections: ${metadata.section_count}` : null,
+        metadata?.total_tables ? `Tables: ${metadata.total_tables}` : null
+      ].filter(Boolean).join(', ')
+
+      setStatus(`Success! ${details}`)
+      setTimeout(() => setStatus(''), 5000)
 
     } catch (error) {
       setStatus(`Error: ${(error as Error).message}`)
