@@ -102,6 +102,9 @@ class OCRServer:
         # Phase 2: Smart text refinement
         text_result = self.text_refiner.refine(layout_result)
 
+        # Calculate confidence metrics
+        confidence_metrics = self._calculate_confidence_metrics(layout_result['chunks'])
+
         return {
             'status': 'ok',
             'result': {
@@ -112,7 +115,8 @@ class OCRServer:
                 'metadata': {
                     'page_count': 1,
                     'layout_type': layout_result.get('layout_type', 'unknown'),
-                    'table_count': len(tables)
+                    'table_count': len(tables),
+                    'confidence': confidence_metrics
                 }
             }
         }
@@ -352,3 +356,42 @@ if __name__ == '__main__':
             return response.get('result', {})
         else:
             raise Exception(response.get('message', 'OCR failed'))
+
+    def _calculate_confidence_metrics(self, chunks: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        信頼度メトリクスを計算
+
+        Args:
+            chunks: レイアウトチャンク
+
+        Returns:
+            信頼度メトリクス
+        """
+        all_confidences = []
+        low_confidence_count = 0
+        total_lines = 0
+
+        for chunk in chunks:
+            for line in chunk.get('lines', []):
+                confidence = line.get('confidence', 0)
+                all_confidences.append(confidence)
+                total_lines += 1
+                if confidence < 0.8:  # 信頼度80%未満を低信頼度とする
+                    low_confidence_count += 1
+
+        if not all_confidences:
+            return {
+                'average': 0.0,
+                'min': 0.0,
+                'max': 0.0,
+                'low_confidence_ratio': 0.0
+            }
+
+        return {
+            'average': float(np.mean(all_confidences)),
+            'min': float(np.min(all_confidences)),
+            'max': float(np.max(all_confidences)),
+            'low_confidence_ratio': float(low_confidence_count / total_lines) if total_lines > 0 else 0.0,
+            'total_lines': total_lines,
+            'low_confidence_lines': low_confidence_count
+        }

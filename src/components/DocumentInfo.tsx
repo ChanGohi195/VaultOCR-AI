@@ -1,4 +1,4 @@
-import { BookOpen, Hash, Table, FileText } from 'lucide-react'
+import { BookOpen, Hash, Table, FileText, CheckCircle, AlertCircle } from 'lucide-react'
 
 interface DocumentInfoProps {
   metadata?: {
@@ -7,6 +7,14 @@ interface DocumentInfoProps {
     section_count?: number
     total_tables?: number
     table_count?: number
+    confidence?: {
+      average: number
+      min: number
+      max: number
+      low_confidence_ratio: number
+      total_lines?: number
+      low_confidence_lines?: number
+    }
   }
   toc?: Array<{
     title: string
@@ -64,6 +72,57 @@ export default function DocumentInfo({ metadata, toc, sections }: DocumentInfoPr
                   </span>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* OCR Confidence */}
+        {metadata?.confidence && (
+          <div>
+            <h3 className="text-xs font-semibold mb-3 text-obsidian-text/80 flex items-center space-x-2">
+              <CheckCircle className="w-3 h-3" />
+              <span>OCR QUALITY</span>
+            </h3>
+            <div className="space-y-2 text-xs text-obsidian-text/60">
+              <div className="flex justify-between items-center">
+                <span>Confidence:</span>
+                <div className="flex items-center gap-1">
+                  <div className="w-16 h-2 bg-obsidian-bg-secondary rounded-full overflow-hidden">
+                    <div
+                      className={`h-full ${
+                        metadata.confidence.average >= 0.9
+                          ? 'bg-green-500'
+                          : metadata.confidence.average >= 0.7
+                          ? 'bg-yellow-500'
+                          : 'bg-red-500'
+                      }`}
+                      style={{ width: `${metadata.confidence.average * 100}%` }}
+                    />
+                  </div>
+                  <span className="font-medium text-obsidian-text">
+                    {(metadata.confidence.average * 100).toFixed(0)}%
+                  </span>
+                </div>
+              </div>
+              {metadata.confidence.low_confidence_lines !== undefined && (
+                <div className="flex justify-between items-center">
+                  <span>Low conf. lines:</span>
+                  <div className="flex items-center gap-1">
+                    {metadata.confidence.low_confidence_ratio > 0.2 && (
+                      <AlertCircle className="w-3 h-3 text-yellow-500" />
+                    )}
+                    <span className="font-medium text-obsidian-text">
+                      {metadata.confidence.low_confidence_lines} / {metadata.confidence.total_lines}
+                    </span>
+                  </div>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span>Range:</span>
+                <span className="font-medium text-obsidian-text">
+                  {(metadata.confidence.min * 100).toFixed(0)}% - {(metadata.confidence.max * 100).toFixed(0)}%
+                </span>
+              </div>
             </div>
           </div>
         )}

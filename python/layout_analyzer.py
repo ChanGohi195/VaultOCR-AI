@@ -5,14 +5,17 @@ from typing import Dict, Any, List
 from pathlib import Path
 import cv2
 import numpy as np
+from image_preprocessor import ImagePreprocessor
 
 
 class LayoutAnalyzer:
     """Analyzes document layout using PaddleOCR"""
 
-    def __init__(self):
+    def __init__(self, use_preprocessing: bool = True):
         # Lazy import to avoid loading on module import
         self._ocr = None
+        self.use_preprocessing = use_preprocessing
+        self.preprocessor = ImagePreprocessor() if use_preprocessing else None
 
     @property
     def ocr(self):
@@ -49,8 +52,24 @@ class LayoutAnalyzer:
                 ]
             }
         """
-        # Run PaddleOCR
-        result = self.ocr.ocr(image_path, cls=True)
+        # Load image
+        image = cv2.imread(str(image_path))
+
+        # Apply preprocessing if enabled
+        if self.use_preprocessing and self.preprocessor:
+            image = self.preprocessor.preprocess(
+                image,
+                denoise=True,
+                deskew=True,
+                enhance_contrast=True,
+                binarize=False  # PaddleOCRは二値化済み画像よりグレースケールの方が良い
+            )
+            # Convert back to BGR for PaddleOCR
+            if len(image.shape) == 2:
+                image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+
+        # Run PaddleOCR (on preprocessed image if enabled)
+        result = self.ocr.ocr(image, cls=True)
 
         if not result or not result[0]:
             return {

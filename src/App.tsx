@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Sidebar from './components/Sidebar'
 import Editor from './components/Editor'
 import Preview from './components/Preview'
@@ -22,6 +22,7 @@ function App() {
   const [showExportDialog, setShowExportDialog] = useState(false)
   const [showBatchDialog, setShowBatchDialog] = useState(false)
   const [currentDocId, setCurrentDocId] = useState<string | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
 
   const handleFileSelect = async (filePath: string) => {
     setCurrentFile(filePath)
@@ -120,8 +121,131 @@ function App() {
     }
   }
 
+  // Drag and drop handler
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+  }
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+
+    const files = Array.from(e.dataTransfer.files)
+    const supportedExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif']
+
+    const validFiles = files.filter(file => {
+      const ext = file.name.toLowerCase().match(/\.[^.]+$/)?.[0]
+      return ext && supportedExtensions.includes(ext)
+    })
+
+    if (validFiles.length === 0) {
+      alert('Please drop PDF or image files (jpg, png, pdf, etc.)')
+      return
+    }
+
+    if (validFiles.length === 1) {
+      // Single file: run OCR directly
+      const file = validFiles[0]
+      const filePath = (file as any).path || file.name
+
+      try {
+        const result = await window.electronAPI.runOCR(filePath)
+        if (result.success && result.result) {
+          handleOCRComplete(
+            result.result.text,
+            result.result.metadata,
+            result.result.toc,
+            result.result.sections
+          )
+        } else {
+          alert(`OCR failed: ${result.error}`)
+        }
+      } catch (error) {
+        alert(`Error: ${(error as Error).message}`)
+      }
+    } else {
+      // Multiple files: open batch dialog
+      setShowBatchDialog(true)
+      // Note: Batch dialog would need to be enhanced to accept dropped files
+    }
+  }
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
+      const ctrlOrCmd = isMac ? e.metaKey : e.ctrlKey
+
+      // Cmd/Ctrl + S: Save
+      if (ctrlOrCmd && e.key === 's') {
+        e.preventDefault()
+        if (currentFile) {
+          handleSave()
+        }
+      }
+
+      // Cmd/Ctrl + K: Focus search
+      if (ctrlOrCmd && e.key === 'k') {
+        e.preventDefault()
+        const searchInput = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement
+        searchInput?.focus()
+      }
+
+      // Cmd/Ctrl + B: Open batch dialog
+      if (ctrlOrCmd && e.key === 'b') {
+        e.preventDefault()
+        setShowBatchDialog(true)
+      }
+
+      // Cmd/Ctrl + E: Open export dialog
+      if (ctrlOrCmd && e.key === 'e') {
+        e.preventDefault()
+        setShowExportDialog(true)
+      }
+
+      // Cmd/Ctrl + P: Toggle preview
+      if (ctrlOrCmd && e.key === 'p') {
+        e.preventDefault()
+        setShowPreview(prev => !prev)
+      }
+
+      // Cmd/Ctrl + D: Toggle documents/files sidebar
+      if (ctrlOrCmd && e.key === 'd') {
+        e.preventDefault()
+        setSidebarMode(mode => mode === 'files' ? 'documents' : 'files')
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [currentFile, handleSave])
+
   return (
-    <div className="flex flex-col h-screen bg-obsidian-bg text-obsidian-text">
+    <div
+      className="flex flex-col h-screen bg-obsidian-bg text-obsidian-text relative"
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {/* Drag overlay */}
+      {isDragging && (
+        <div className="absolute inset-0 z-50 bg-obsidian-accent/20 backdrop-blur-sm flex items-center justify-center border-4 border-dashed border-obsidian-accent">
+          <div className="bg-obsidian-bg p-8 rounded-lg shadow-2xl text-center">
+            <p className="text-2xl font-bold text-obsidian-accent mb-2">Drop files here</p>
+            <p className="text-obsidian-text-muted">PDF, JPG, PNG supported</p>
+          </div>
+        </div>
+      )}
+
       {/* Search Bar */}
       <div className="border-b border-obsidian-border p-3 flex items-center justify-center bg-obsidian-bg-secondary">
         <SearchBar
