@@ -1,0 +1,16 @@
+# OCR Engine
+paddlepaddle>=2.5.0
+paddleocr>=2.7.0
+
+# Image Processing
+Pillow>=10.0.0
+pdf2image>=1.16.0
+opencv-python>=4.8.0
+
+# Utilities
+numpy>=1.24.0
+pyyaml>=6.0
+
+# Text Processing (for Phase 2)
+# spacy>=3.7.0
+# pysbd>=0.3.4
