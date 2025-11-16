@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Save, Eye, EyeOff, FileText, Camera, Loader2 } from 'lucide-react'
+import { Save, Eye, EyeOff, FileText, Camera, Loader2, Download, FolderOpen, FileStack } from 'lucide-react'
 
 interface ToolbarProps {
   onSave: () => void
@@ -7,9 +7,21 @@ interface ToolbarProps {
   showPreview: boolean
   currentFile: string | null
   onOCRComplete: (text: string, metadata?: any, toc?: any[], sections?: any[]) => void
+  onExport?: () => void
+  onToggleSidebarMode?: () => void
+  sidebarMode?: 'files' | 'documents'
 }
 
-export default function Toolbar({ onSave, onTogglePreview, showPreview, currentFile, onOCRComplete }: ToolbarProps) {
+export default function Toolbar({
+  onSave,
+  onTogglePreview,
+  showPreview,
+  currentFile,
+  onOCRComplete,
+  onExport,
+  onToggleSidebarMode,
+  sidebarMode
+}: ToolbarProps) {
   const [isProcessing, setIsProcessing] = useState(false)
   const [status, setStatus] = useState<string>('')
 
@@ -77,10 +89,30 @@ export default function Toolbar({ onSave, onTogglePreview, showPreview, currentF
         <div className="flex items-center space-x-2">
           <FileText className="w-5 h-5 text-obsidian-accent" />
           <span className="text-sm font-medium">VaultOCR-AI</span>
-          <span className="text-xs text-obsidian-text/50">Phase 2</span>
+          <span className="text-xs text-obsidian-text/50">Phase 4</span>
         </div>
 
         <div className="flex items-center space-x-1">
+          {onToggleSidebarMode && (
+            <button
+              onClick={onToggleSidebarMode}
+              className="px-3 py-1.5 text-sm rounded hover:bg-obsidian-hover flex items-center space-x-1"
+              title="Toggle between Files and Documents"
+            >
+              {sidebarMode === 'files' ? (
+                <>
+                  <FileStack className="w-4 h-4" />
+                  <span>Documents</span>
+                </>
+              ) : (
+                <>
+                  <FolderOpen className="w-4 h-4" />
+                  <span>Files</span>
+                </>
+              )}
+            </button>
+          )}
+
           <button
             onClick={onSave}
             disabled={!currentFile}
@@ -99,6 +131,17 @@ export default function Toolbar({ onSave, onTogglePreview, showPreview, currentF
             {showPreview ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             <span>{showPreview ? 'Hide' : 'Show'} Preview</span>
           </button>
+
+          {onExport && (
+            <button
+              onClick={onExport}
+              className="px-3 py-1.5 text-sm rounded hover:bg-obsidian-hover flex items-center space-x-1"
+              title="Export Document"
+            >
+              <Download className="w-4 h-4" />
+              <span>Export</span>
+            </button>
+          )}
 
           <button
             onClick={handleOCR}

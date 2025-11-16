@@ -8,5 +8,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('write-file', filePath, content),
   listFiles: (dirPath: string) => ipcRenderer.invoke('list-files', dirPath),
   selectFile: (options?: any) => ipcRenderer.invoke('select-file', options),
+  selectDirectory: () => ipcRenderer.invoke('select-directory'),
   runOCR: (filePath: string) => ipcRenderer.invoke('run-ocr', filePath),
+  // Phase 4 APIs
+  searchDocuments: (query: string, limit?: number) =>
+    ipcRenderer.invoke('search-documents', query, limit),
+  saveDocument: (docData: any) => ipcRenderer.invoke('save-document', docData),
+  exportDocument: (exportData: any) =>
+    ipcRenderer.invoke('export-document', exportData),
+  listDocuments: (limit?: number, offset?: number) =>
+    ipcRenderer.invoke('list-documents', limit, offset),
+  getTags: () => ipcRenderer.invoke('get-tags'),
 })

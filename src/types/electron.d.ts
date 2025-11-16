@@ -11,6 +11,7 @@ export interface ElectronAPI {
     filePath?: string
     canceled?: boolean
   }>
+  selectDirectory: () => Promise<string | null>
   runOCR: (filePath: string) => Promise<{
     success: boolean
     result?: {
@@ -20,8 +21,67 @@ export interface ElectronAPI {
       metadata?: {
         page_count: number
         layout_type: string
+        section_count?: number
+        total_tables?: number
       }
+      toc?: any[]
+      sections?: any[]
     }
+    error?: string
+  }>
+  // Phase 4 APIs
+  searchDocuments: (query: string, limit?: number) => Promise<{
+    success: boolean
+    result?: {
+      results: Array<{
+        doc_id: string
+        title: string
+        snippet: string
+        path?: string
+        score: number
+      }>
+    }
+    error?: string
+  }>
+  saveDocument: (docData: {
+    title: string
+    content: string
+    tags?: string[]
+    metadata?: any
+    page_count?: number
+  }) => Promise<{
+    success: boolean
+    result?: { doc_id: string }
+    error?: string
+  }>
+  exportDocument: (exportData: {
+    format: string
+    content: string
+    metadata?: any
+    toc?: any[]
+    vault_path?: string
+  }) => Promise<{
+    success: boolean
+    result?: { message?: string; path?: string }
+    error?: string
+  }>
+  listDocuments: (limit?: number, offset?: number) => Promise<{
+    success: boolean
+    result?: {
+      documents: Array<{
+        id: string
+        title: string
+        file_path?: string
+        created_at: string
+        page_count?: number
+        tags: string[]
+      }>
+    }
+    error?: string
+  }>
+  getTags: () => Promise<{
+    success: boolean
+    result?: { tags: string[] }
     error?: string
   }>
 }

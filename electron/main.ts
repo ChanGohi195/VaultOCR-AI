@@ -114,6 +114,18 @@ ipcMain.handle('select-file', async (event, options?: any) => {
   return { success: true, filePath: result.filePaths[0] }
 })
 
+ipcMain.handle('select-directory', async (event) => {
+  const result = await dialog.showOpenDialog(mainWindow!, {
+    properties: ['openDirectory']
+  })
+
+  if (result.canceled) {
+    return null
+  }
+
+  return result.filePaths[0]
+})
+
 ipcMain.handle('run-ocr', async (event, filePath: string) => {
   try {
     const result = await runPythonOCR(filePath)
@@ -123,13 +135,73 @@ ipcMain.handle('run-ocr', async (event, filePath: string) => {
   }
 })
 
-// Python OCR integration
-function runPythonOCR(filePath: string): Promise<any> {
+// Phase 4 IPC Handlers
+ipcMain.handle('search-documents', async (event, query: string, limit?: number) => {
+  try {
+    const result = await runPythonCommand({
+      command: 'search',
+      query,
+      limit: limit || 20
+    })
+    return { success: true, result }
+  } catch (error) {
+    return { success: false, error: (error as Error).message }
+  }
+})
+
+ipcMain.handle('save-document', async (event, docData: any) => {
+  try {
+    const result = await runPythonCommand({
+      command: 'save_document',
+      ...docData
+    })
+    return { success: true, result }
+  } catch (error) {
+    return { success: false, error: (error as Error).message }
+  }
+})
+
+ipcMain.handle('export-document', async (event, exportData: any) => {
+  try {
+    const result = await runPythonCommand({
+      command: 'export',
+      ...exportData
+    })
+    return { success: true, result }
+  } catch (error) {
+    return { success: false, error: (error as Error).message }
+  }
+})
+
+ipcMain.handle('list-documents', async (event, limit?: number, offset?: number) => {
+  try {
+    const result = await runPythonCommand({
+      command: 'list_documents',
+      limit: limit || 100,
+      offset: offset || 0
+    })
+    return { success: true, result }
+  } catch (error) {
+    return { success: false, error: (error as Error).message }
+  }
+})
+
+ipcMain.handle('get-tags', async (event) => {
+  try {
+    const result = await runPythonCommand({
+      command: 'get_tags'
+    })
+    return { success: true, result }
+  } catch (error) {
+    return { success: false, error: (error as Error).message }
+  }
+})
+
+// Generic Python command runner
+function runPythonCommand(request: any): Promise<any> {
   return new Promise((resolve, reject) => {
-    // Determine Python script path
     const pythonScriptPath = path.join(__dirname, '../../python/ocr_server.py')
 
-    // Spawn Python process if not already running
     if (!pythonProcess) {
       pythonProcess = spawn('python3', [pythonScriptPath], {
         stdio: ['pipe', 'pipe', 'pipe']
@@ -152,38 +224,23 @@ function runPythonOCR(filePath: string): Promise<any> {
       }
     }
 
-    // Determine command based on file extension
-    const ext = path.extname(filePath).toLowerCase()
-    const command = ext === '.pdf' ? 'ocr_pdf' : 'ocr'
-    const requestKey = ext === '.pdf' ? 'pdf_path' : 'image_path'
-
-    // Send request to Python
-    const request = {
-      command,
-      [requestKey]: filePath
-    }
-
     if (pythonProcess?.stdin) {
       pythonProcess.stdin.write(JSON.stringify(request) + '\n')
     }
 
-    // Read response from Python
     let responseData = ''
 
     const onData = (data: Buffer) => {
       responseData += data.toString()
 
-      // Try to parse JSON response
       try {
         const response = JSON.parse(responseData)
-
-        // Remove listener
         pythonProcess?.stdout?.removeListener('data', onData)
 
         if (response.status === 'ok') {
-          resolve(response.result)
+          resolve(response.result || response)
         } else {
-          reject(new Error(response.message || 'OCR failed'))
+          reject(new Error(response.message || 'Command failed'))
         }
       } catch (e) {
         // Not complete JSON yet, continue accumulating
@@ -194,10 +251,21 @@ function runPythonOCR(filePath: string): Promise<any> {
       pythonProcess.stdout.on('data', onData)
     }
 
-    // Timeout after 60 seconds
     setTimeout(() => {
       pythonProcess?.stdout?.removeListener('data', onData)
-      reject(new Error('OCR timeout'))
+      reject(new Error('Command timeout'))
     }, 60000)
+  })
+}
+
+// Python OCR integration (uses generic runner)
+function runPythonOCR(filePath: string): Promise<any> {
+  const ext = path.extname(filePath).toLowerCase()
+  const command = ext === '.pdf' ? 'ocr_pdf' : 'ocr'
+  const requestKey = ext === '.pdf' ? 'pdf_path' : 'image_path'
+
+  return runPythonCommand({
+    command,
+    [requestKey]: filePath
   })
 })
