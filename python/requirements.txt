@@ -21,3 +21,7 @@ whoosh>=2.7.4
 # Language Detection (Phase 7)
 langdetect>=1.0.9
 polyglot>=16.7.4
+
+# Vector Search (Phase 8)
+sentence-transformers>=2.2.0
+faiss-cpu>=1.7.4

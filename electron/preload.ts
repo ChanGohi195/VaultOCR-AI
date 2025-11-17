@@ -26,4 +26,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('batch-ocr', filePaths, autoSave, tags),
   // Phase 7 APIs
   getSupportedLanguages: () => ipcRenderer.invoke('get-supported-languages'),
+  // Phase 8 APIs
+  semanticSearch: (query: string, topK?: number, threshold?: number) =>
+    ipcRenderer.invoke('semantic-search', query, topK, threshold),
+  hybridSearch: (query: string, topK?: number, keywordWeight?: number, semanticWeight?: number) =>
+    ipcRenderer.invoke('hybrid-search', query, topK, keywordWeight, semanticWeight),
+  findSimilar: (docId: string, topK?: number) =>
+    ipcRenderer.invoke('find-similar', docId, topK),
 })

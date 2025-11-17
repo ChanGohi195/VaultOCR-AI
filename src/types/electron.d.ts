@@ -138,6 +138,48 @@ export interface ElectronAPI {
     }
     error?: string
   }>
+  // Phase 8 APIs
+  semanticSearch: (query: string, topK?: number, threshold?: number) => Promise<{
+    success: boolean
+    result?: {
+      results: Array<{
+        doc_id: string
+        title: string
+        content: string
+        score: number
+        metadata?: any
+      }>
+    }
+    error?: string
+  }>
+  hybridSearch: (query: string, topK?: number, keywordWeight?: number, semanticWeight?: number) => Promise<{
+    success: boolean
+    result?: {
+      results: Array<{
+        doc_id: string
+        title: string
+        content: string
+        score: number
+        keyword_score?: number
+        semantic_score?: number
+        metadata?: any
+      }>
+    }
+    error?: string
+  }>
+  findSimilar: (docId: string, topK?: number) => Promise<{
+    success: boolean
+    result?: {
+      results: Array<{
+        doc_id: string
+        title: string
+        content: string
+        score: number
+        metadata?: any
+      }>
+    }
+    error?: string
+  }>
 }
 
 declare global {

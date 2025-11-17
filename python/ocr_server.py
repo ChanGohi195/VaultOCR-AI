@@ -3,6 +3,7 @@
 OCR Server - Stdin/Stdout JSON communication with Electron
 Phase 4: Full-text search, document management, export
 Phase 7: Multi-language support
+Phase 8: Vector search, semantic search
 """
 import json
 import sys
@@ -21,6 +22,7 @@ from search_engine import SearchEngine
 from document_manager import DocumentManager
 from export_manager import ExportManager
 from batch_processor import BatchProcessor
+from vector_search import VectorSearchEngine
 
 
 class OCRServer:
@@ -45,6 +47,9 @@ class OCRServer:
             document_manager=self.document_manager,
             search_engine=self.search_engine
         )
+
+        # Phase 8: Vector search
+        self.vector_search = VectorSearchEngine()
 
     def process_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process incoming request and return result"""
@@ -71,6 +76,14 @@ class OCRServer:
                 return self.handle_batch_ocr(request)
             elif command == 'get_supported_languages':
                 return self.handle_get_supported_languages(request)
+            elif command == 'semantic_search':
+                return self.handle_semantic_search(request)
+            elif command == 'hybrid_search':
+                return self.handle_hybrid_search(request)
+            elif command == 'find_similar':
+                return self.handle_find_similar(request)
+            elif command == 'index_document_vector':
+                return self.handle_index_document_vector(request)
             elif command == 'ping':
                 return {'status': 'ok', 'message': 'pong'}
             else:
@@ -248,10 +261,18 @@ if __name__ == '__main__':
                 metadata=metadata, tags=tags
             )
 
+            # Add to keyword search index
             self.search_engine.add_document(
                 doc_id=doc_id, title=title, content=content,
                 path=file_path, tags=tags, metadata=metadata
             )
+
+            # Phase 8: Add to vector search index
+            self.vector_search.add_document(
+                doc_id=doc_id, title=title, content=content,
+                metadata={'path': file_path, 'tags': tags, **metadata}
+            )
+            self.vector_search.save_index()
 
             return {'status': 'ok', 'doc_id': doc_id}
         except Exception as e:
@@ -431,3 +452,216 @@ if __name__ == '__main__':
             }
         except Exception as e:
             return {'status': 'error', 'message': str(e)}
+
+    # Phase 8: Vector Search Handlers
+
+    def handle_semantic_search(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Handle semantic search request (vector-based)
+
+        Args:
+            request: {
+                'query': str,
+                'top_k': int (optional, default 10),
+                'threshold': float (optional, default 0.0)
+            }
+
+        Returns:
+            {
+                'status': 'ok',
+                'results': [
+                    {'doc_id': str, 'title': str, 'content': str, 'score': float, 'metadata': dict},
+                    ...
+                ]
+            }
+        """
+        try:
+            query = request.get('query', '').strip()
+            top_k = request.get('top_k', 10)
+            threshold = request.get('threshold', 0.0)
+
+            if not query:
+                return {'status': 'error', 'message': 'Query is required'}
+
+            results = self.vector_search.search(query, top_k=top_k, threshold=threshold)
+
+            return {
+                'status': 'ok',
+                'results': results
+            }
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}
+
+    def handle_hybrid_search(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Handle hybrid search (keyword + vector)
+
+        Combines keyword-based and semantic search results
+
+        Args:
+            request: {
+                'query': str,
+                'top_k': int (optional, default 10),
+                'keyword_weight': float (optional, default 0.5),
+                'semantic_weight': float (optional, default 0.5)
+            }
+
+        Returns:
+            {
+                'status': 'ok',
+                'results': [merged and ranked results]
+            }
+        """
+        try:
+            query = request.get('query', '').strip()
+            top_k = request.get('top_k', 10)
+            keyword_weight = request.get('keyword_weight', 0.5)
+            semantic_weight = request.get('semantic_weight', 0.5)
+
+            if not query:
+                return {'status': 'error', 'message': 'Query is required'}
+
+            # Get keyword search results
+            keyword_results = self.search_engine.search(query, limit=top_k * 2)
+
+            # Get semantic search results
+            semantic_results = self.vector_search.search(query, top_k=top_k * 2)
+
+            # Merge and rank results
+            merged = self._merge_search_results(
+                keyword_results, semantic_results,
+                keyword_weight, semantic_weight,
+                top_k
+            )
+
+            return {
+                'status': 'ok',
+                'results': merged
+            }
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}
+
+    def handle_find_similar(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Find similar documents to a given document
+
+        Args:
+            request: {
+                'doc_id': str,
+                'top_k': int (optional, default 5)
+            }
+
+        Returns:
+            {
+                'status': 'ok',
+                'results': [similar documents with scores]
+            }
+        """
+        try:
+            doc_id = request.get('doc_id')
+            top_k = request.get('top_k', 5)
+
+            if not doc_id:
+                return {'status': 'error', 'message': 'doc_id is required'}
+
+            results = self.vector_search.find_similar(doc_id, top_k=top_k)
+
+            return {
+                'status': 'ok',
+                'results': results
+            }
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}
+
+    def handle_index_document_vector(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Manually index a document in vector search
+
+        Args:
+            request: {
+                'doc_id': str,
+                'title': str,
+                'content': str,
+                'metadata': dict (optional)
+            }
+
+        Returns:
+            {'status': 'ok'}
+        """
+        try:
+            doc_id = request.get('doc_id')
+            title = request.get('title', '')
+            content = request.get('content', '')
+            metadata = request.get('metadata', {})
+
+            if not doc_id:
+                return {'status': 'error', 'message': 'doc_id is required'}
+
+            self.vector_search.add_document(
+                doc_id=doc_id,
+                title=title,
+                content=content,
+                metadata=metadata
+            )
+            self.vector_search.save_index()
+
+            return {'status': 'ok'}
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}
+
+    def _merge_search_results(self, keyword_results: List[Dict], semantic_results: List[Dict],
+                              keyword_weight: float, semantic_weight: float,
+                              top_k: int) -> List[Dict]:
+        """
+        Merge keyword and semantic search results using weighted scoring
+
+        Args:
+            keyword_results: Results from keyword search
+            semantic_results: Results from semantic search
+            keyword_weight: Weight for keyword scores
+            semantic_weight: Weight for semantic scores
+            top_k: Number of results to return
+
+        Returns:
+            Merged and ranked results
+        """
+        # Normalize scores and combine
+        doc_scores = {}
+
+        # Process keyword results
+        for result in keyword_results:
+            doc_id = result.get('doc_id')
+            score = result.get('score', 0.0)
+            doc_scores[doc_id] = {
+                'keyword_score': score * keyword_weight,
+                'semantic_score': 0.0,
+                'data': result
+            }
+
+        # Process semantic results
+        for result in semantic_results:
+            doc_id = result.get('doc_id')
+            score = result.get('score', 0.0)
+
+            if doc_id in doc_scores:
+                doc_scores[doc_id]['semantic_score'] = score * semantic_weight
+            else:
+                doc_scores[doc_id] = {
+                    'keyword_score': 0.0,
+                    'semantic_score': score * semantic_weight,
+                    'data': result
+                }
+
+        # Calculate combined scores and sort
+        merged_results = []
+        for doc_id, scores in doc_scores.items():
+            combined_score = scores['keyword_score'] + scores['semantic_score']
+            result = scores['data'].copy()
+            result['score'] = combined_score
+            result['keyword_score'] = scores['keyword_score']
+            result['semantic_score'] = scores['semantic_score']
+            merged_results.append(result)
+
+        # Sort by combined score and return top_k
+        merged_results.sort(key=lambda x: x['score'], reverse=True)
+        return merged_results[:top_k]

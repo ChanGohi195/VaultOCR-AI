@@ -241,6 +241,49 @@ ipcMain.handle('batch-ocr', async (event, filePaths: string[], autoSave: boolean
   }
 })
 
+// Phase 8: Vector Search IPC Handlers
+ipcMain.handle('semantic-search', async (event, query: string, topK?: number, threshold?: number) => {
+  try {
+    const result = await runPythonCommand({
+      command: 'semantic_search',
+      query,
+      top_k: topK || 10,
+      threshold: threshold || 0.0
+    })
+    return { success: true, result }
+  } catch (error) {
+    return { success: false, error: (error as Error).message }
+  }
+})
+
+ipcMain.handle('hybrid-search', async (event, query: string, topK?: number, keywordWeight?: number, semanticWeight?: number) => {
+  try {
+    const result = await runPythonCommand({
+      command: 'hybrid_search',
+      query,
+      top_k: topK || 10,
+      keyword_weight: keywordWeight || 0.5,
+      semantic_weight: semanticWeight || 0.5
+    })
+    return { success: true, result }
+  } catch (error) {
+    return { success: false, error: (error as Error).message }
+  }
+})
+
+ipcMain.handle('find-similar', async (event, docId: string, topK?: number) => {
+  try {
+    const result = await runPythonCommand({
+      command: 'find_similar',
+      doc_id: docId,
+      top_k: topK || 5
+    })
+    return { success: true, result }
+  } catch (error) {
+    return { success: false, error: (error as Error).message }
+  }
+})
+
 // Generic Python command runner
 function runPythonCommand(request: any): Promise<any> {
   return new Promise((resolve, reject) => {
