@@ -5,6 +5,7 @@ Phase 4: Full-text search, document management, export
 Phase 7: Multi-language support
 Phase 8: Vector search, semantic search
 Phase 9: AI summarization, translation, custom templates, searchable PDF
+Phase 10: Plugin system for extensibility
 """
 import json
 import sys
@@ -28,6 +29,8 @@ from summarization_engine import SummarizationEngine
 from translation_engine import TranslationEngine
 from template_engine import TemplateEngine
 from pdf_generator import SearchablePDFGenerator
+from plugin_manager import PluginManager
+from plugin_interface import PluginType
 
 
 class OCRServer:
@@ -61,6 +64,10 @@ class OCRServer:
         self.translation_engine = TranslationEngine()
         self.template_engine = TemplateEngine()
         self.pdf_generator = SearchablePDFGenerator()
+
+        # Phase 10: Plugin system
+        self.plugin_manager = PluginManager()
+        self._load_builtin_plugins()
 
     def process_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process incoming request and return result"""
@@ -108,6 +115,17 @@ class OCRServer:
                 return self.handle_get_templates(request)
             elif command == 'get_translation_pairs':
                 return self.handle_get_translation_pairs(request)
+            # Phase 10: Plugin system
+            elif command == 'list_plugins':
+                return self.handle_list_plugins(request)
+            elif command == 'get_plugin_info':
+                return self.handle_get_plugin_info(request)
+            elif command == 'configure_plugin':
+                return self.handle_configure_plugin(request)
+            elif command == 'enable_plugin':
+                return self.handle_enable_plugin(request)
+            elif command == 'disable_plugin':
+                return self.handle_disable_plugin(request)
             elif command == 'ping':
                 return {'status': 'ok', 'message': 'pong'}
             else:
@@ -817,6 +835,99 @@ if __name__ == '__main__':
             # Convert tuples to dicts for JSON serialization
             pairs_list = [{'source': pair[0], 'target': pair[1]} for pair in pairs]
             return {'status': 'ok', 'pairs': pairs_list}
+
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}
+
+    # Phase 10: Plugin system handlers
+    def _load_builtin_plugins(self):
+        """Load built-in plugins"""
+        try:
+            # Discover and load plugins from plugins directory
+            self.plugin_manager.discover_plugins('./python/plugins')
+            logger.info("Built-in plugins loaded successfully")
+        except Exception as e:
+            logger.warning(f"Failed to load some plugins: {e}")
+
+    def handle_list_plugins(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """List registered plugins"""
+        try:
+            plugin_type = request.get('plugin_type')  # Optional filter
+            enabled_only = request.get('enabled_only', False)
+
+            # Convert string to PluginType enum if provided
+            if plugin_type:
+                try:
+                    plugin_type = PluginType(plugin_type)
+                except ValueError:
+                    return {'status': 'error', 'message': f'Invalid plugin type: {plugin_type}'}
+
+            plugins = self.plugin_manager.list_plugins(
+                plugin_type=plugin_type,
+                enabled_only=enabled_only
+            )
+
+            return {'status': 'ok', 'plugins': plugins}
+
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}
+
+    def handle_get_plugin_info(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Get detailed info about a specific plugin"""
+        try:
+            plugin_name = request.get('plugin_name')
+            if not plugin_name:
+                return {'status': 'error', 'message': 'plugin_name is required'}
+
+            info = self.plugin_manager.get_plugin_info(plugin_name)
+            if not info:
+                return {'status': 'error', 'message': f'Plugin not found: {plugin_name}'}
+
+            return {'status': 'ok', 'plugin': info}
+
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}
+
+    def handle_configure_plugin(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Configure a plugin"""
+        try:
+            plugin_name = request.get('plugin_name')
+            config = request.get('config', {})
+
+            if not plugin_name:
+                return {'status': 'error', 'message': 'plugin_name is required'}
+
+            self.plugin_manager.configure_plugin(plugin_name, config)
+
+            return {'status': 'ok', 'message': f'Plugin {plugin_name} configured'}
+
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}
+
+    def handle_enable_plugin(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Enable a plugin"""
+        try:
+            plugin_name = request.get('plugin_name')
+            if not plugin_name:
+                return {'status': 'error', 'message': 'plugin_name is required'}
+
+            self.plugin_manager.enable_plugin(plugin_name)
+
+            return {'status': 'ok', 'message': f'Plugin {plugin_name} enabled'}
+
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}
+
+    def handle_disable_plugin(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Disable a plugin"""
+        try:
+            plugin_name = request.get('plugin_name')
+            if not plugin_name:
+                return {'status': 'error', 'message': 'plugin_name is required'}
+
+            self.plugin_manager.disable_plugin(plugin_name)
+
+            return {'status': 'ok', 'message': f'Plugin {plugin_name} disabled'}
 
         except Exception as e:
             return {'status': 'error', 'message': str(e)}
