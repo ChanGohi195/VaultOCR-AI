@@ -2,12 +2,14 @@
 """
 OCR Server - Stdin/Stdout JSON communication with Electron
 Phase 4: Full-text search, document management, export
+Phase 7: Multi-language support
 """
 import json
 import sys
 from pathlib import Path
 from typing import Dict, Any, List
 import traceback
+import numpy as np
 
 from layout_analyzer import LayoutAnalyzer
 from text_refiner import TextRefiner
@@ -67,6 +69,8 @@ class OCRServer:
                 return self.handle_get_document(request)
             elif command == 'batch_ocr':
                 return self.handle_batch_ocr(request)
+            elif command == 'get_supported_languages':
+                return self.handle_get_supported_languages(request)
             elif command == 'ping':
                 return {'status': 'ok', 'message': 'pong'}
             else:
@@ -80,14 +84,20 @@ class OCRServer:
             }
 
     def handle_ocr(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """Handle OCR request for a single image"""
+        """Handle OCR request for a single image with multi-language support"""
         image_path = request.get('image_path')
+        lang = request.get('lang')  # Phase 7: Language parameter
+        auto_detect = request.get('auto_detect', True)  # Phase 7: Auto-detect language
 
         if not image_path or not Path(image_path).exists():
             return {'status': 'error', 'message': 'Invalid image path'}
 
-        # Phase 2: Advanced OCR with layout detection
-        layout_result = self.layout_analyzer.analyze(image_path)
+        # Phase 7: Multi-language OCR with layout detection
+        layout_result = self.layout_analyzer.analyze(
+            image_path,
+            lang=lang,
+            auto_detect=auto_detect
+        )
 
         # Phase 3: Optimize reading order
         layout_result['chunks'] = self.reading_order_optimizer.optimize_reading_order(
@@ -115,6 +125,9 @@ class OCRServer:
                 'metadata': {
                     'page_count': 1,
                     'layout_type': layout_result.get('layout_type', 'unknown'),
+                    'detected_language': layout_result.get('detected_language', 'en'),
+                    'language_confidence': layout_result.get('language_confidence', 0.0),
+                    'mixed_languages': layout_result.get('mixed_languages', []),
                     'table_count': len(tables),
                     'confidence': confidence_metrics
                 }
@@ -395,3 +408,26 @@ if __name__ == '__main__':
             'total_lines': total_lines,
             'low_confidence_lines': low_confidence_count
         }
+
+    def handle_get_supported_languages(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Get list of supported languages for OCR
+
+        Returns:
+            {
+                'status': 'ok',
+                'languages': [
+                    {'code': 'ja', 'name': '日本語 (Japanese)', 'paddleocr': 'japan', 'tesseract': 'jpn'},
+                    ...
+                ]
+            }
+        """
+        try:
+            languages = self.layout_analyzer.language_detector.get_supported_languages()
+
+            return {
+                'status': 'ok',
+                'languages': languages
+            }
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}

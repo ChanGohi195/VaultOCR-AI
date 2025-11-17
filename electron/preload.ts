@@ -9,7 +9,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   listFiles: (dirPath: string) => ipcRenderer.invoke('list-files', dirPath),
   selectFile: (options?: any) => ipcRenderer.invoke('select-file', options),
   selectDirectory: () => ipcRenderer.invoke('select-directory'),
-  runOCR: (filePath: string) => ipcRenderer.invoke('run-ocr', filePath),
+  runOCR: (filePath: string, lang?: string, autoDetect?: boolean) =>
+    ipcRenderer.invoke('run-ocr', filePath, lang, autoDetect),
   // Phase 4 APIs
   searchDocuments: (query: string, limit?: number) =>
     ipcRenderer.invoke('search-documents', query, limit),
@@ -23,4 +24,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Phase 5 APIs
   batchOCR: (filePaths: string[], autoSave: boolean, tags: string[]) =>
     ipcRenderer.invoke('batch-ocr', filePaths, autoSave, tags),
+  // Phase 7 APIs
+  getSupportedLanguages: () => ipcRenderer.invoke('get-supported-languages'),
 })

@@ -24,6 +24,10 @@ function App() {
   const [currentDocId, setCurrentDocId] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
 
+  // Phase 7: Multi-language support
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('en')
+  const [autoDetectLanguage, setAutoDetectLanguage] = useState<boolean>(true)
+
   const handleFileSelect = async (filePath: string) => {
     setCurrentFile(filePath)
     const result = await window.electronAPI.readFile(filePath)
@@ -264,6 +268,10 @@ function App() {
         onBatch={() => setShowBatchDialog(true)}
         onToggleSidebarMode={() => setSidebarMode(mode => mode === 'files' ? 'documents' : 'files')}
         sidebarMode={sidebarMode}
+        selectedLanguage={selectedLanguage}
+        autoDetectLanguage={autoDetectLanguage}
+        onLanguageChange={setSelectedLanguage}
+        onAutoDetectChange={setAutoDetectLanguage}
       />
 
       <div className="flex flex-1 overflow-hidden">

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Save, Eye, EyeOff, FileText, Camera, Loader2, Download, FolderOpen, FileStack, Layers } from 'lucide-react'
+import { LanguageSelector } from './LanguageSelector'
 
 interface ToolbarProps {
   onSave: () => void
@@ -11,6 +12,11 @@ interface ToolbarProps {
   onBatch?: () => void
   onToggleSidebarMode?: () => void
   sidebarMode?: 'files' | 'documents'
+  // Phase 7: Multi-language support
+  selectedLanguage: string
+  autoDetectLanguage: boolean
+  onLanguageChange: (lang: string) => void
+  onAutoDetectChange: (autoDetect: boolean) => void
 }
 
 export default function Toolbar({
@@ -22,7 +28,11 @@ export default function Toolbar({
   onExport,
   onBatch,
   onToggleSidebarMode,
-  sidebarMode
+  sidebarMode,
+  selectedLanguage,
+  autoDetectLanguage,
+  onLanguageChange,
+  onAutoDetectChange
 }: ToolbarProps) {
   const [isProcessing, setIsProcessing] = useState(false)
   const [status, setStatus] = useState<string>('')
@@ -47,8 +57,9 @@ export default function Toolbar({
 
       setStatus(isP DF ? `Processing PDF: ${fileName}...` : `Processing image: ${fileName}...`)
 
-      // Run OCR
-      const ocrResult = await window.electronAPI.runOCR(filePath)
+      // Run OCR with language parameters (Phase 7)
+      const lang = autoDetectLanguage ? undefined : selectedLanguage
+      const ocrResult = await window.electronAPI.runOCR(filePath, lang, autoDetectLanguage)
 
       if (!ocrResult.success) {
         setStatus(`Error: ${ocrResult.error}`)
@@ -91,7 +102,7 @@ export default function Toolbar({
         <div className="flex items-center space-x-2">
           <FileText className="w-5 h-5 text-obsidian-accent" />
           <span className="text-sm font-medium">VaultOCR-AI</span>
-          <span className="text-xs text-obsidian-text/50">Phase 6</span>
+          <span className="text-xs text-obsidian-text/50">Phase 7</span>
         </div>
 
         <div className="flex items-center space-x-1">
@@ -155,6 +166,14 @@ export default function Toolbar({
               <span>Batch</span>
             </button>
           )}
+
+          {/* Phase 7: Language Selector */}
+          <LanguageSelector
+            selectedLanguage={selectedLanguage}
+            autoDetect={autoDetectLanguage}
+            onLanguageChange={onLanguageChange}
+            onAutoDetectChange={onAutoDetectChange}
+          />
 
           <button
             onClick={handleOCR}

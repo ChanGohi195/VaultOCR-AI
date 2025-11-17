@@ -13,7 +13,7 @@ export interface ElectronAPI {
     canceled?: boolean
   }>
   selectDirectory: () => Promise<string | null>
-  runOCR: (filePath: string) => Promise<{
+  runOCR: (filePath: string, lang?: string, autoDetect?: boolean) => Promise<{
     success: boolean
     result?: {
       text: string
@@ -24,6 +24,13 @@ export interface ElectronAPI {
         layout_type: string
         section_count?: number
         total_tables?: number
+        detected_language?: string
+        language_confidence?: number
+        mixed_languages?: Array<{
+          lang: string
+          percentage: number
+          char_count: number
+        }>
       }
       toc?: any[]
       sections?: any[]
@@ -114,6 +121,19 @@ export interface ElectronAPI {
         status: string
         error?: string
         doc_id?: string
+      }>
+    }
+    error?: string
+  }>
+  // Phase 7 APIs
+  getSupportedLanguages: () => Promise<{
+    success: boolean
+    result?: {
+      languages: Array<{
+        code: string
+        name: string
+        paddleocr: string
+        tesseract: string
       }>
     }
     error?: string

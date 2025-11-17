@@ -132,9 +132,21 @@ ipcMain.handle('select-directory', async (event) => {
   return result.filePaths[0]
 })
 
-ipcMain.handle('run-ocr', async (event, filePath: string) => {
+ipcMain.handle('run-ocr', async (event, filePath: string, lang?: string, autoDetect?: boolean) => {
   try {
-    const result = await runPythonOCR(filePath)
+    const result = await runPythonOCR(filePath, lang, autoDetect)
+    return { success: true, result }
+  } catch (error) {
+    return { success: false, error: (error as Error).message }
+  }
+})
+
+// Phase 7: Get supported languages
+ipcMain.handle('get-supported-languages', async (event) => {
+  try {
+    const result = await runPythonCommand({
+      command: 'get_supported_languages'
+    })
     return { success: true, result }
   } catch (error) {
     return { success: false, error: (error as Error).message }
@@ -291,13 +303,24 @@ function runPythonCommand(request: any): Promise<any> {
 }
 
 // Python OCR integration (uses generic runner)
-function runPythonOCR(filePath: string): Promise<any> {
+// Phase 7: Added multi-language support
+function runPythonOCR(filePath: string, lang?: string, autoDetect: boolean = true): Promise<any> {
   const ext = path.extname(filePath).toLowerCase()
   const command = ext === '.pdf' ? 'ocr_pdf' : 'ocr'
   const requestKey = ext === '.pdf' ? 'pdf_path' : 'image_path'
 
-  return runPythonCommand({
+  const request: any = {
     command,
     [requestKey]: filePath
-  })
+  }
+
+  // Phase 7: Add language parameters
+  if (lang) {
+    request.lang = lang
+  }
+  if (autoDetect !== undefined) {
+    request.auto_detect = autoDetect
+  }
+
+  return runPythonCommand(request)
 })

@@ -1,4 +1,4 @@
-import { BookOpen, Hash, Table, FileText, CheckCircle, AlertCircle } from 'lucide-react'
+import { BookOpen, Hash, Table, FileText, CheckCircle, AlertCircle, Globe, Languages } from 'lucide-react'
 
 interface DocumentInfoProps {
   metadata?: {
@@ -15,6 +15,14 @@ interface DocumentInfoProps {
       total_lines?: number
       low_confidence_lines?: number
     }
+    // Phase 7: Multi-language support
+    detected_language?: string
+    language_confidence?: number
+    mixed_languages?: Array<{
+      lang: string
+      percentage: number
+      char_count: number
+    }>
   }
   toc?: Array<{
     title: string
@@ -123,6 +131,66 @@ export default function DocumentInfo({ metadata, toc, sections }: DocumentInfoPr
                   {(metadata.confidence.min * 100).toFixed(0)}% - {(metadata.confidence.max * 100).toFixed(0)}%
                 </span>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Phase 7: Language Detection */}
+        {metadata?.detected_language && (
+          <div>
+            <h3 className="text-xs font-semibold mb-3 text-obsidian-text/80 flex items-center space-x-2">
+              <Globe className="w-3 h-3" />
+              <span>LANGUAGE</span>
+            </h3>
+            <div className="space-y-2 text-xs text-obsidian-text/60">
+              <div className="flex justify-between items-center">
+                <span>Detected:</span>
+                <span className="font-medium text-obsidian-text uppercase">
+                  {metadata.detected_language}
+                </span>
+              </div>
+              {metadata.language_confidence !== undefined && (
+                <div className="flex justify-between items-center">
+                  <span>Confidence:</span>
+                  <div className="flex items-center gap-1">
+                    <div className="w-16 h-2 bg-obsidian-bg-secondary rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-blue-500"
+                        style={{ width: `${metadata.language_confidence * 100}%` }}
+                      />
+                    </div>
+                    <span className="font-medium text-obsidian-text">
+                      {(metadata.language_confidence * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                </div>
+              )}
+              {metadata.mixed_languages && metadata.mixed_languages.length > 0 && (
+                <div className="mt-3">
+                  <div className="flex items-center gap-1 mb-2">
+                    <Languages className="w-3 h-3 text-obsidian-accent" />
+                    <span className="text-[10px] font-semibold text-obsidian-text/70">
+                      MIXED LANGUAGES
+                    </span>
+                  </div>
+                  {metadata.mixed_languages.map((langInfo, idx) => (
+                    <div key={idx} className="flex justify-between items-center py-1">
+                      <span className="uppercase text-[10px]">{langInfo.lang}</span>
+                      <div className="flex items-center gap-1">
+                        <div className="w-12 h-1.5 bg-obsidian-bg-secondary rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-obsidian-accent"
+                            style={{ width: `${langInfo.percentage * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-[10px] font-medium text-obsidian-text">
+                          {(langInfo.percentage * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}

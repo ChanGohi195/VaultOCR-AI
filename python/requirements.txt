@@ -17,3 +17,7 @@ pysbd>=0.3.4
 
 # Full-text Search (Phase 4)
 whoosh>=2.7.4
+
+# Language Detection (Phase 7)
+langdetect>=1.0.9
+polyglot>=16.7.4
