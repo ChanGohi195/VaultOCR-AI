@@ -44,5 +44,65 @@
     "react-markdown": "^9.0.1",
     "react-split": "^2.0.14",
     "lucide-react": "^0.294.0"
+  },
+  "build": {
+    "appId": "com.vaultocr.ai",
+    "productName": "VaultOCR-AI",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "python/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": ["dmg", "zip"],
+      "icon": "build/icon.icns"
+    },
+    "win": {
+      "target": ["nsis", "portable"],
+      "icon": "build/icon.ico"
+    },
+    "linux": {
+      "target": ["AppImage", "deb", "rpm"],
+      "category": "Office",
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "VaultOCR-AI",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico"
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "linux": {
+      "desktop": {
+        "Name": "VaultOCR-AI",
+        "Comment": "Layout-aware OCR Engine with Obsidian-style UI",
+        "Categories": "Office;Utility;",
+        "Keywords": "OCR;PDF;Markdown;",
+        "StartupWMClass": "VaultOCR-AI"
+      }
+    }
   }
 }

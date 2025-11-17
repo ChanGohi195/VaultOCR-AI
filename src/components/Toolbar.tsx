@@ -91,7 +91,7 @@ export default function Toolbar({
         <div className="flex items-center space-x-2">
           <FileText className="w-5 h-5 text-obsidian-accent" />
           <span className="text-sm font-medium">VaultOCR-AI</span>
-          <span className="text-xs text-obsidian-text/50">Phase 4</span>
+          <span className="text-xs text-obsidian-text/50">Phase 6</span>
         </div>
 
         <div className="flex items-center space-x-1">

@@ -1,7 +1,9 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { spawn, ChildProcess } from 'child_process'
+import fs from 'fs'
+import os from 'os'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
