@@ -180,6 +180,86 @@ export interface ElectronAPI {
     }
     error?: string
   }>
+  // Phase 9 APIs
+  summarize: (text: string, options?: {
+    maxLength?: number
+    minLength?: number
+    language?: string
+    ratio?: number
+  }) => Promise<{
+    success: boolean
+    result?: {
+      summary: string
+      original_length: number
+      summary_length: number
+      compression_ratio: number
+      model_used: string
+      language?: string
+      error?: string
+    }
+    error?: string
+  }>
+  translate: (text: string, sourceLang: string, targetLang: string) => Promise<{
+    success: boolean
+    result?: {
+      translation: string
+      source_lang: string
+      target_lang: string
+      model_used: string
+      original_length: number
+      translation_length: number
+      error?: string
+    }
+    error?: string
+  }>
+  extractTemplate: (text: string, templateName?: string) => Promise<{
+    success: boolean
+    result?: any
+    error?: string
+  }>
+  generateSearchablePDF: (options: {
+    mode: 'text' | 'images'
+    text?: string
+    images?: string[]
+    ocrResults?: any[]
+    outputPath: string
+    metadata?: {
+      title?: string
+      author?: string
+      subject?: string
+      keywords?: string
+    }
+    fontSize?: number
+    lineSpacing?: number
+  }) => Promise<{
+    success: boolean
+    result?: {
+      output_path: string
+      page_count: number
+      file_size: number
+    }
+    error?: string
+  }>
+  getTemplates: () => Promise<{
+    success: boolean
+    result?: {
+      templates: Array<{
+        name: string
+        description: string
+      }>
+    }
+    error?: string
+  }>
+  getTranslationPairs: () => Promise<{
+    success: boolean
+    result?: {
+      pairs: Array<{
+        source: string
+        target: string
+      }>
+    }
+    error?: string
+  }>
 }
 
 declare global {

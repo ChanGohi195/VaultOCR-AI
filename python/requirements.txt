@@ -25,3 +25,13 @@ polyglot>=16.7.4
 # Vector Search (Phase 8)
 sentence-transformers>=2.2.0
 faiss-cpu>=1.7.4
+
+# AI Features (Phase 9)
+transformers>=4.30.0
+torch>=2.0.0
+sentencepiece>=0.1.99
+sacremoses>=0.0.53
+
+# PDF Generation (Phase 9)
+reportlab>=4.0.0
+PyPDF2>=3.0.0

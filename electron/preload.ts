@@ -33,4 +33,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('hybrid-search', query, topK, keywordWeight, semanticWeight),
   findSimilar: (docId: string, topK?: number) =>
     ipcRenderer.invoke('find-similar', docId, topK),
+  // Phase 9 APIs
+  summarize: (text: string, options?: any) =>
+    ipcRenderer.invoke('summarize', text, options),
+  translate: (text: string, sourceLang: string, targetLang: string) =>
+    ipcRenderer.invoke('translate', text, sourceLang, targetLang),
+  extractTemplate: (text: string, templateName?: string) =>
+    ipcRenderer.invoke('extract-template', text, templateName),
+  generateSearchablePDF: (options: any) =>
+    ipcRenderer.invoke('generate-searchable-pdf', options),
+  getTemplates: () =>
+    ipcRenderer.invoke('get-templates'),
+  getTranslationPairs: () =>
+    ipcRenderer.invoke('get-translation-pairs'),
 })

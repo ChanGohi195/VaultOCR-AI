@@ -14,7 +14,12 @@
   - **セマンティック検索**: 意味ベースの賢い検索（50言語対応）
   - **ハイブリッド検索**: キーワード + AIの融合
   - **類似文書発見**: 1文書から関連文書を自動推薦
+- **AI機能**:
+  - **AI要約**: 45言語対応の自動要約（mT5/BART）
+  - **自動翻訳**: 20言語ペア対応翻訳（Helsinki-NLP Opus）
+  - **テンプレート抽出**: 領収書・名刺・契約書・請求書の自動構造化
 - **バッチ処理**: 複数ファイル一括OCR処理
+- **Searchable PDF**: OCR結果から検索可能PDF生成
 - **Obsidian風UI**: 使い慣れたMarkdownエディタ体験
 - **完全無料**: PaddleOCR使用、API課金なし、100%ローカル実行
 - **プライバシー保護**: インターネット不要、完全オフライン動作
@@ -31,6 +36,10 @@
   - Whoosh (BSD) - キーワード検索
   - sentence-transformers (Apache 2.0) - セマンティック検索
   - FAISS (MIT) - 高速ベクトル検索
+- **AI機能**:
+  - transformers (Apache 2.0) - 要約・翻訳
+  - PyTorch (BSD) - 機械学習フレームワーク
+- **PDF生成**: reportlab (BSD) - Searchable PDF生成
 - **言語検出**: langdetect (Apache 2.0)
 - **データベース**: SQLite (内蔵) - ドキュメント管理
 
@@ -102,11 +111,19 @@
 - [x] UI: 検索モード切り替え（Keyword/Semantic/Hybrid）
 - [x] FAISSインデックス永続化
 
-### Phase 9: 次世代機能（次）
-- [ ] AI要約・自動翻訳（mBART/M2M100）
-- [ ] カスタムテンプレート（領収書・名刺・契約書）
-- [ ] プラグインシステム
-- [ ] エクスポート拡張（Searchable PDF）
+### Phase 9: AI機能・PDF生成 ✅ (完了)
+- [x] AI要約エンジン（mT5/BART - 45言語対応）
+- [x] 自動翻訳（Helsinki-NLP Opus - 20言語ペア）
+- [x] カスタムテンプレート抽出（領収書・名刺・契約書・請求書・汎用フォーム）
+- [x] Searchable PDF生成（OCR結果からテキスト埋め込みPDF作成）
+- [x] テンプレート自動検出（文書種別AI判定）
+- [x] API統合（summarize/translate/extractTemplate/generateSearchablePDF）
+
+### Phase 10: 次世代拡張（次）
+- [ ] プラグインシステム（カスタムOCRパイプライン）
+- [ ] Webアプリ版（ブラウザで動作）
+- [ ] クラウド同期（オプション）
+- [ ] OCR精度向上（カスタムモデル学習）
 
 ## 🛠️ セットアップ
 
@@ -149,16 +166,22 @@ VaultOCR-AI/
 │   │   ├── DocumentInfo.tsx  # TOC/Sections
 │   │   └── ...
 ├── python/           # Python OCR Backend
-│   ├── ocr_server.py          # メインサーバー
-│   ├── layout_analyzer.py     # レイアウト検出
-│   ├── text_refiner.py        # 段落化
-│   ├── document_stitcher.py   # ページ統合
-│   ├── table_detector.py      # テーブル検出
-│   ├── reading_order.py       # 読み順最適化
-│   ├── search_engine.py       # 全文検索（Whoosh）
-│   ├── document_manager.py    # ドキュメント管理
-│   ├── export_manager.py      # エクスポート機能
-│   └── batch_processor.py     # バッチ処理（Phase 5）
+│   ├── ocr_server.py            # メインサーバー
+│   ├── layout_analyzer.py       # レイアウト検出
+│   ├── text_refiner.py          # 段落化
+│   ├── document_stitcher.py     # ページ統合
+│   ├── table_detector.py        # テーブル検出
+│   ├── reading_order.py         # 読み順最適化
+│   ├── search_engine.py         # 全文検索（Whoosh）
+│   ├── document_manager.py      # ドキュメント管理
+│   ├── export_manager.py        # エクスポート機能
+│   ├── batch_processor.py       # バッチ処理（Phase 5）
+│   ├── language_detector.py     # 言語検出（Phase 7）
+│   ├── vector_search.py         # ベクトル検索（Phase 8）
+│   ├── summarization_engine.py  # AI要約（Phase 9）
+│   ├── translation_engine.py    # 翻訳（Phase 9）
+│   ├── template_engine.py       # テンプレート抽出（Phase 9）
+│   └── pdf_generator.py         # Searchable PDF生成（Phase 9）
 └── dist/             # ビルド出力
 ```
 
@@ -172,7 +195,68 @@ Issue・PRを歓迎します！
 
 ---
 
-**開発状況**: Phase 8 完了 🎉🚀
+**開発状況**: Phase 9 完了 🎉🚀
+
+## 🆕 Phase 9 新機能
+
+### AI要約・翻訳・テンプレート抽出・Searchable PDF
+
+#### 1. AI要約エンジン
+- **多言語対応要約**: 45言語対応（mT5-multilingual）
+- **英語専用高精度要約**: facebook/bart-large-cnn
+- **日本語専用要約**: sonoisa/t5-base-japanese
+- **圧縮率指定**: ratio パラメータで要約率を制御
+- **セクション別要約**: 文書の各セクションを個別に要約
+- **自動長さ調整**: 入力テキスト量に応じた最適な要約長
+
+#### 2. 自動翻訳エンジン
+- **20言語ペア対応**: Helsinki-NLP Opus-MT モデル
+- **主要言語ペア**:
+  - 日本語 ⇔ 英語
+  - 中国語 ⇔ 英語
+  - 韓国語 ⇔ 英語
+  - フランス語・ドイツ語・スペイン語・ロシア語・アラビア語等 ⇔ 英語
+- **バッチ翻訳**: 複数テキストの一括翻訳
+- **セクション別翻訳**: 文書構造を保持した翻訳
+
+#### 3. カスタムテンプレート抽出
+- **5種類の組み込みテンプレート**:
+  1. **領収書**: 店名・日付・合計・小計・税・支払方法・明細抽出
+  2. **名刺**: 氏名・会社・役職・電話・メール・住所・Web抽出
+  3. **契約書**: 契約名・当事者・有効期限・重要条項・署名抽出
+  4. **請求書**: 請求番号・請求先・支払期限・明細・金額抽出
+  5. **汎用フォーム**: ラベル-値ペアの自動抽出
+- **自動文書種別判定**: テキストから文書タイプを自動検出
+- **正規表現ベース抽出**: 柔軟なパターンマッチング
+
+#### 4. Searchable PDF生成
+- **OCR結果からPDF作成**: 画像+テキストレイヤー埋め込み
+- **完全検索可能**: PDFビューアで全文検索可能
+- **テキストのみPDF**: マークダウンテキストから通常PDF生成
+- **メタデータ埋め込み**: タイトル・著者・キーワード等
+- **PDF結合**: 複数PDFの統合機能
+
+#### API統合
+```python
+# 要約API
+electronAPI.summarize(text, { language: 'ja', ratio: 0.3 })
+
+# 翻訳API
+electronAPI.translate(text, 'ja', 'en')
+
+# テンプレート抽出API
+electronAPI.extractTemplate(text, 'receipt')
+
+# Searchable PDF生成API
+electronAPI.generateSearchablePDF({
+  mode: 'text',
+  text: content,
+  outputPath: '/path/to/output.pdf',
+  metadata: { title: 'Document', author: 'User' }
+})
+```
+
+---
 
 ## 🆕 Phase 8 新機能
 

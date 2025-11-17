@@ -284,6 +284,91 @@ ipcMain.handle('find-similar', async (event, docId: string, topK?: number) => {
   }
 })
 
+// Phase 9: AI feature IPC Handlers
+ipcMain.handle('summarize', async (event, text: string, options?: any) => {
+  try {
+    const result = await runPythonCommand({
+      command: 'summarize',
+      text,
+      max_length: options?.maxLength || 150,
+      min_length: options?.minLength || 40,
+      language: options?.language || 'en',
+      ratio: options?.ratio
+    })
+    return { success: true, result }
+  } catch (error) {
+    return { success: false, error: (error as Error).message }
+  }
+})
+
+ipcMain.handle('translate', async (event, text: string, sourceLang: string, targetLang: string) => {
+  try {
+    const result = await runPythonCommand({
+      command: 'translate',
+      text,
+      source_lang: sourceLang,
+      target_lang: targetLang
+    })
+    return { success: true, result }
+  } catch (error) {
+    return { success: false, error: (error as Error).message }
+  }
+})
+
+ipcMain.handle('extract-template', async (event, text: string, templateName?: string) => {
+  try {
+    const result = await runPythonCommand({
+      command: 'extract_template',
+      text,
+      template: templateName
+    })
+    return { success: true, result }
+  } catch (error) {
+    return { success: false, error: (error as Error).message }
+  }
+})
+
+ipcMain.handle('generate-searchable-pdf', async (event, options: any) => {
+  try {
+    const result = await runPythonCommand({
+      command: 'generate_searchable_pdf',
+      mode: options.mode || 'text',
+      text: options.text,
+      images: options.images,
+      ocr_results: options.ocrResults,
+      output_path: options.outputPath,
+      metadata: options.metadata,
+      font_size: options.fontSize || 12,
+      line_spacing: options.lineSpacing || 14
+    })
+    return { success: true, result }
+  } catch (error) {
+    return { success: false, error: (error as Error).message }
+  }
+})
+
+ipcMain.handle('get-templates', async (event) => {
+  try {
+    const result = await runPythonCommand({
+      command: 'get_templates'
+    })
+    return { success: true, result }
+  } catch (error) {
+    return { success: false, error: (error as Error).message }
+  }
+})
+
+ipcMain.handle('get-translation-pairs', async (event) => {
+  try {
+    const result = await runPythonCommand({
+      command: 'get_translation_pairs'
+    })
+    return { success: true, result }
+  } catch (error) {
+    return { success: false, error: (error as Error).message }
+  }
+})
+
 // Generic Python command runner
 function runPythonCommand(request: any): Promise<any> {
   return new Promise((resolve, reject) => {

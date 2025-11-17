@@ -4,6 +4,7 @@ OCR Server - Stdin/Stdout JSON communication with Electron
 Phase 4: Full-text search, document management, export
 Phase 7: Multi-language support
 Phase 8: Vector search, semantic search
+Phase 9: AI summarization, translation, custom templates, searchable PDF
 """
 import json
 import sys
@@ -23,6 +24,10 @@ from document_manager import DocumentManager
 from export_manager import ExportManager
 from batch_processor import BatchProcessor
 from vector_search import VectorSearchEngine
+from summarization_engine import SummarizationEngine
+from translation_engine import TranslationEngine
+from template_engine import TemplateEngine
+from pdf_generator import SearchablePDFGenerator
 
 
 class OCRServer:
@@ -50,6 +55,12 @@ class OCRServer:
 
         # Phase 8: Vector search
         self.vector_search = VectorSearchEngine()
+
+        # Phase 9: AI features and PDF generation
+        self.summarization_engine = SummarizationEngine()
+        self.translation_engine = TranslationEngine()
+        self.template_engine = TemplateEngine()
+        self.pdf_generator = SearchablePDFGenerator()
 
     def process_request(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Process incoming request and return result"""
@@ -84,6 +95,19 @@ class OCRServer:
                 return self.handle_find_similar(request)
             elif command == 'index_document_vector':
                 return self.handle_index_document_vector(request)
+            # Phase 9: AI features
+            elif command == 'summarize':
+                return self.handle_summarize(request)
+            elif command == 'translate':
+                return self.handle_translate(request)
+            elif command == 'extract_template':
+                return self.handle_extract_template(request)
+            elif command == 'generate_searchable_pdf':
+                return self.handle_generate_searchable_pdf(request)
+            elif command == 'get_templates':
+                return self.handle_get_templates(request)
+            elif command == 'get_translation_pairs':
+                return self.handle_get_translation_pairs(request)
             elif command == 'ping':
                 return {'status': 'ok', 'message': 'pong'}
             else:
@@ -665,3 +689,134 @@ if __name__ == '__main__':
         # Sort by combined score and return top_k
         merged_results.sort(key=lambda x: x['score'], reverse=True)
         return merged_results[:top_k]
+
+    # Phase 9: AI feature handlers
+    def handle_summarize(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle text summarization request"""
+        try:
+            text = request.get('text', '')
+            max_length = request.get('max_length', 150)
+            min_length = request.get('min_length', 40)
+            language = request.get('language', 'en')
+            ratio = request.get('ratio')
+
+            if not text:
+                return {'status': 'error', 'message': 'Text is required'}
+
+            result = self.summarization_engine.summarize(
+                text=text,
+                max_length=max_length,
+                min_length=min_length,
+                language=language,
+                ratio=ratio
+            )
+
+            return {'status': 'ok', 'result': result}
+
+        except Exception as e:
+            return {'status': 'error', 'message': str(e), 'traceback': traceback.format_exc()}
+
+    def handle_translate(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle translation request"""
+        try:
+            text = request.get('text', '')
+            source_lang = request.get('source_lang', 'en')
+            target_lang = request.get('target_lang', 'ja')
+            max_length = request.get('max_length', 512)
+
+            if not text:
+                return {'status': 'error', 'message': 'Text is required'}
+
+            result = self.translation_engine.translate(
+                text=text,
+                source_lang=source_lang,
+                target_lang=target_lang,
+                max_length=max_length
+            )
+
+            return {'status': 'ok', 'result': result}
+
+        except Exception as e:
+            return {'status': 'error', 'message': str(e), 'traceback': traceback.format_exc()}
+
+    def handle_extract_template(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle template extraction request"""
+        try:
+            text = request.get('text', '')
+            template_name = request.get('template')  # Optional: auto-detect if None
+
+            if not text:
+                return {'status': 'error', 'message': 'Text is required'}
+
+            result = self.template_engine.extract(text, template_name)
+
+            return {'status': 'ok', 'result': result}
+
+        except Exception as e:
+            return {'status': 'error', 'message': str(e), 'traceback': traceback.format_exc()}
+
+    def handle_generate_searchable_pdf(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Handle searchable PDF generation request"""
+        try:
+            mode = request.get('mode', 'text')  # 'text' or 'images'
+
+            if mode == 'text':
+                text = request.get('text', '')
+                output_path = request.get('output_path')
+                metadata = request.get('metadata', {})
+                font_size = request.get('font_size', 12)
+                line_spacing = request.get('line_spacing', 14)
+
+                if not text or not output_path:
+                    return {'status': 'error', 'message': 'Text and output_path are required'}
+
+                result = self.pdf_generator.create_from_text(
+                    text=text,
+                    output_path=output_path,
+                    metadata=metadata,
+                    font_size=font_size,
+                    line_spacing=line_spacing
+                )
+
+            elif mode == 'images':
+                images = request.get('images', [])
+                ocr_results = request.get('ocr_results', [])
+                output_path = request.get('output_path')
+                metadata = request.get('metadata', {})
+
+                if not images or not output_path:
+                    return {'status': 'error', 'message': 'Images and output_path are required'}
+
+                result = self.pdf_generator.create_from_images(
+                    images=images,
+                    ocr_results=ocr_results,
+                    output_path=output_path,
+                    metadata=metadata
+                )
+            else:
+                return {'status': 'error', 'message': f'Invalid mode: {mode}'}
+
+            return {'status': 'ok', 'result': result}
+
+        except Exception as e:
+            return {'status': 'error', 'message': str(e), 'traceback': traceback.format_exc()}
+
+    def handle_get_templates(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Get list of available document templates"""
+        try:
+            templates = self.template_engine.list_templates()
+            return {'status': 'ok', 'templates': templates}
+
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}
+
+    def handle_get_translation_pairs(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Get list of supported translation language pairs"""
+        try:
+            pairs = self.translation_engine.get_supported_pairs()
+            # Convert tuples to dicts for JSON serialization
+            pairs_list = [{'source': pair[0], 'target': pair[1]} for pair in pairs]
+            return {'status': 'ok', 'pairs': pairs_list}
+
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}
